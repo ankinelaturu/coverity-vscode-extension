@@ -10,7 +10,6 @@ const { DecorationManager } = require('./src/decorations/decorations');
 const { registerFileDecorations } = require('./src/explorer/fileDecorations');
 const { registerReportStatusBar } = require('./src/ui/reportStatusBar');
 const { rerunCoverity } = require('./src/rerun/rerun');
-const { compareRuns } = require('./src/compare/compareRuns');
 
 /** @type {vscode.OutputChannel | null} */
 let outputChannel = null;
@@ -105,8 +104,7 @@ function registerCommands(context, session) {
     }
   });
   reg('coverity.showParseOutput', () => showParseOutput(session));
-  reg('coverity.rerunCoverity', () => rerunCoverity(session));
-  reg('coverity.compareRuns', () => compareRuns(session));
+  reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
 }
 
 async function pickAndLoad(session) {

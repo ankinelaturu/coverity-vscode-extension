@@ -96,13 +96,6 @@
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       },
-      {
-        "command": "coverity.compareRuns",
-        "title": "Compare Runs",
-        "icon": "$(diff)",
-        "category": "Coverity",
-        "enablement": "coverity.hasReport"
-      }
     ],
     "menus": {
       "commandPalette": [
@@ -113,7 +106,6 @@
         { "command": "coverity.configurePathMapping", "when": "coverity.hasReport" },
         { "command": "coverity.resetAdjustedLocations", "when": "coverity.hasReport" },
         { "command": "coverity.rerunCoverity", "when": "coverity.hasReport" },
-        { "command": "coverity.compareRuns", "when": "coverity.hasReport" },
         { "command": "coverity.previousTraceStep", "when": "coverity.hasReport" },
         { "command": "coverity.nextTraceStep", "when": "coverity.hasReport" }
       ]
@@ -197,10 +189,10 @@
           "default": "",
           "description": "Path to the report file produced by rerun, relative to workspace root or absolute."
         },
-        "coverity.compareRunsEnabled": {
+        "coverity.rerun.saveBeforeRun": {
           "type": "boolean",
-          "default": false,
-          "description": "Optional compare-runs feature (basic snapshot support)."
+          "default": true,
+          "description": "Prompt to save all dirty editors before starting a rerun."
         }
       }
     },
