@@ -34,6 +34,7 @@ function activate(context) {
     registerCodeLens(session),
     registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
+    vscode.workspace.onDidRenameFiles((e) => session.handleFilesRenamed(e.files)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       session.activeEditorUri = editor?.document.uri ?? null;
       session.fireChange();

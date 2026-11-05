@@ -213,6 +213,30 @@ class ReportSession {
     }
   }
 
+  /**
+   * Best-effort: keep tracked URIs aligned when a source file is renamed in the workspace.
+   * @param {import('vscode').FileRenameEvent[]} renames
+   */
+  handleFilesRenamed(renames) {
+    if (!this.indexes || !renames?.length) {
+      return;
+    }
+    let touched = false;
+    for (const { oldUri, newUri } of renames) {
+      const oldStr = oldUri.toString();
+      for (const t of this.tracked.values()) {
+        if (t.uri?.toString() === oldStr) {
+          t.uri = newUri;
+          touched = true;
+        }
+      }
+    }
+    if (touched) {
+      this.persistCache();
+      this.fireChange();
+    }
+  }
+
   scheduleRefresh() {
     if (this._refreshTimer) {
       clearTimeout(this._refreshTimer);
