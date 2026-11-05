@@ -14,6 +14,26 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-002 | Parser lives in single adapter module | Accepted | 2026-11-04 |
 | DEC-003 | Primary install target is desktop VS Code folder copy | Accepted | 2026-11-04 |
 | DEC-004 | Synthetic report uses cov-format-errors multiline grammar | Accepted | 2026-11-04 |
+| DEC-005 | JavaScript-only extension folder (no npm on target) | Accepted | 2026-11-04 |
+| DEC-006 | Gutter trace lanes deferred; badges + overview ruler only | Accepted | 2026-11-05 |
+
+---
+
+## DEC-005 — JavaScript-only extension
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Ship plain `.js` under `src/` with `extension.js` entry; no bundle/npm install on destination.
+
+---
+
+## DEC-006 — Gutter lanes deferred
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** `coverity.experimentalTraceLanes` default false; no multi-lane arrow graph (Decoration API insufficient). Active-finding step hints via gutter `before` text when `traceBadgesEnabled`.
 
 ---
 

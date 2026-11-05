@@ -1,0 +1,138 @@
+{
+  "name": "coverity-vscode-extension",
+  "displayName": "Coverity Report Helper",
+  "description": "Load cov-format-errors multiline reports and navigate findings in C/C++ sources.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "views": {
+      "coverity": [
+        {
+          "id": "coverityFindings",
+          "name": "Coverity Findings"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "coverity",
+          "title": "Coverity",
+          "icon": "media/shield.svg"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "coverity.loadReport", "title": "Coverity: Load Report", "icon": "$(file)" },
+      { "command": "coverity.reloadReport", "title": "Coverity: Reload Report", "icon": "$(refresh)" },
+      { "command": "coverity.collapseAll", "title": "Coverity: Collapse All", "icon": "$(collapse-all)" },
+      { "command": "coverity.setViewFiles", "title": "View by: Files", "enablement": "coverity.hasReport" },
+      { "command": "coverity.setViewFolders", "title": "View by: Folders", "enablement": "coverity.hasReport" },
+      { "command": "coverity.setViewErrorType", "title": "View by: Error Type", "enablement": "coverity.hasReport" },
+      { "command": "coverity.toggleActiveFileOnly", "title": "Coverity: Toggle Active File Only", "enablement": "coverity.hasReport" },
+      { "command": "coverity.filterFindings", "title": "Coverity: Filter Findings", "enablement": "coverity.hasReport" },
+      { "command": "coverity.configurePathMapping", "title": "Coverity: Configure Path Mapping", "enablement": "coverity.hasReport" },
+      { "command": "coverity.resetAdjustedLocations", "title": "Coverity: Reset Adjusted Locations", "enablement": "coverity.hasReport" },
+      { "command": "coverity.navigateToStep", "title": "Coverity: Navigate to Step" },
+      { "command": "coverity.previousTraceStep", "title": "Coverity: Previous Trace Step", "enablement": "coverity.hasReport" },
+      { "command": "coverity.nextTraceStep", "title": "Coverity: Next Trace Step", "enablement": "coverity.hasReport" },
+      { "command": "coverity.showParseOutput", "title": "Coverity: Show Parse Output", "enablement": "coverity.hasReport" },
+      { "command": "coverity.rerunCoverity", "title": "Coverity: Rerun Analysis (configured runner)", "enablement": "coverity.hasReport" },
+      { "command": "coverity.compareRuns", "title": "Coverity: Compare Runs (optional)", "enablement": "coverity.hasReport" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "coverity.loadReport", "when": "view == coverityFindings", "group": "navigation@1" },
+        { "command": "coverity.reloadReport", "when": "view == coverityFindings", "group": "navigation@2" },
+        { "command": "coverity.filterFindings", "when": "view == coverityFindings", "group": "navigation@3" },
+        { "command": "coverity.toggleActiveFileOnly", "when": "view == coverityFindings", "group": "navigation@4" },
+        { "command": "coverity.collapseAll", "when": "view == coverityFindings", "group": "navigation@5" },
+        { "command": "coverity.rerunCoverity", "when": "view == coverityFindings", "group": "navigation@9" }
+      ],
+      "commandPalette": [
+        { "command": "coverity.setViewFiles", "when": "coverity.hasReport" },
+        { "command": "coverity.setViewFolders", "when": "coverity.hasReport" },
+        { "command": "coverity.setViewErrorType", "when": "coverity.hasReport" }
+      ]
+    },
+    "configuration": {
+      "title": "Coverity Report",
+      "properties": {
+        "coverity.autoLoadReport": {
+          "type": "boolean",
+          "default": true,
+          "description": "When a workspace opens, load the default report path if the file exists."
+        },
+        "coverity.defaultReportPath": {
+          "type": "string",
+          "default": "deploy/coverity/coverity-report.txt",
+          "description": "Report path relative to each workspace folder root (not relative to the report file location)."
+        },
+        "coverity.pathMappings": {
+          "type": "array",
+          "default": [],
+          "description": "Map report path prefixes to workspace paths. Each item: { \"reportPrefix\": \"C:\\\\build\\\\interstellar\", \"workspaceFolder\": \"interstellar\" }.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reportPrefix": { "type": "string" },
+              "workspaceFolder": { "type": "string" }
+            }
+          }
+        },
+        "coverity.codeLensEnabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "coverity.traceBadgesEnabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "coverity.experimentalTraceLanes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental gutter lanes are not implemented; setting reserved for future use."
+        },
+        "coverity.rerun.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Rerun command (requires trusted workspace and manual runner configuration)."
+        },
+        "coverity.rerun.commandLine": {
+          "type": "string",
+          "default": "",
+          "description": "Placeholder: shell command or script to run analysis (user-supplied; not executed from report contents)."
+        },
+        "coverity.rerun.reportOutputPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the report file produced by rerun, relative to workspace root or absolute."
+        },
+        "coverity.compareRunsEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Optional compare-runs feature (basic snapshot support)."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "coverity.previousTraceStep",
+        "key": "alt+shift+up",
+        "when": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.nextTraceStep",
+        "key": "alt+shift+down",
+        "when": "coverity.hasReport"
+      }
+    ]
+  }
+}

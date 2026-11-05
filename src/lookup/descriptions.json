@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "checkers": {
+    "FORWARD_NULL": "Pointer may be null when dereferenced (forward null path).",
+    "DEADCODE": "Code that cannot be executed.",
+    "MISRA C-2012 Rule 18.1, Required": "Array bounds / indexing (MISRA C-2012 Rule 18.1).",
+    "MISRA C-2012 Rule 21.6, Advisory": "Use of standard library I/O (MISRA C-2012 Rule 21.6)."
+  },
+  "eventTags": {
+    "returned_null": "A call returned null.",
+    "assignment": "Pointer assignment along the path.",
+    "var_deref_op": "Pointer dereference.",
+    "var_deref_model": "Dereference through a tracked pointer.",
+    "path": "Control-flow path decision.",
+    "format_string": "Format string / printf-related event."
+  }
+}

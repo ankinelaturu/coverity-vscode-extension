@@ -1,0 +1,6 @@
+.git
+.gitignore
+docs/**
+my-repo/**
+**/*.md
+!README.md
