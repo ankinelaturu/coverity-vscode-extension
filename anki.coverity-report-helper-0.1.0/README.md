@@ -70,6 +70,10 @@ From this folder:
 node scripts/inspect-report.js /path/to/report.txt
 ```
 
+## Friendly descriptions (offline)
+
+Bundled `src/lookup/descriptions.json` adds short **checker** and **event tag** hints in hover and Problems. Unknown labels fall back to raw report text only — not Coverity proprietary documentation. Edit the JSON to extend coverage for your checkers.
+
 ## Path resolution
 
 - Report paths may be **absolute** (Windows drive letters supported) or **relative to the workspace folder root** (not the report file’s directory).
