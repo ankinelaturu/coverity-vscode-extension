@@ -11,36 +11,34 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 - [x] Requirements captured in `CURSOR_COVERITY_EXTENSION_PROMPT.md`
 - [x] Design doc, checklist, parser guide, acceptance, notes infrastructure
 - [x] Root `README.md` (project overview + pointer to docs)
-- [ ] Choose extension id, display name, publisher prefix for folder name (record in DECISIONS_LOG)
+- [x] Choose extension id (`coverity-vscode-extension`) — see DEC-005
 
 ---
 
 ## M1 — Scaffold, build, staging (no feature-complete UI yet)
 
-- [ ] TypeScript extension scaffold (`package.json`, `tsconfig`, entry activation)
-- [ ] ESLint/format baseline (if desired)
-- [ ] Bundle config: external `vscode`, bundle runtime dependencies
-- [ ] `npm run build` produces compiled output
-- [ ] `npm run stage` (or equivalent) writes `dist-extension/local.coverity-report-helper-0.1.0/` (name TBD)
-- [ ] Icons and `package.json` contributes: view, commands (stubs OK initially)
-- [ ] README: install copy path (Windows/macOS/Linux), Cursor vs VS Code, reload steps
-- [ ] Verify staged folder has `main` JS and assets without requiring `npm install` on target
-- [ ] Document untested install hosts honestly
+- [x] JavaScript extension scaffold (`package.json`, `extension.js` activation)
+- [—] ESLint/format baseline (skipped — plain JS)
+- [—] npm bundle/stage (skipped — copy folder; see DEC-005)
+- [x] Icons and `package.json` contributes: view, commands
+- [x] README: install copy path, Cursor reload
+- [x] No npm install on target (plain JS + `vscode` built-in)
+- [x] Cursor in-place extension folder documented; VS Code copy path in README
 
 ---
 
 ## M2 — Parser adapter and fixtures
 
-- [ ] `src/parser/textReportParser.ts` (or agreed path) — all format rules in one module
+- [x] `src/parser/textReportParser.js` — all format rules in one module
 - [ ] Constants/patterns at top with comments + examples ([PARSER_FORMAT.md](./PARSER_FORMAT.md))
-- [ ] Synthetic fixtures: unnumbered single event; single numbered; cross-file trace; colon in payload
-- [ ] Expected normalized JSON (or snapshot) per fixture
-- [ ] Parse warnings + unmatched lines with **source line numbers**
-- [ ] Preserve raw blocks; optional summary line; provisional blank-line boundaries
-- [ ] Dev command/script: print structured parse output for a file (no upload/exec)
-- [ ] Unit tests + single command to run parser tests only
-- [ ] `PARSER_FORMAT.md` updated with edit instructions
-- [ ] **Verification gate:** `[ ]` Real sanitized user report parsed and fixtures adjusted (blocked until sample)
+- [x] Synthetic fixture: `my-repo/deploy/coverity/coverity-report.txt` (multiline Type + trace)
+- [—] JSON snapshot unit tests (minimal testing per user request)
+- [x] Parse warnings + line numbers
+- [x] Summary line; blank-line rule after metadata before trace
+- [x] `node scripts/inspect-report.js <file>`
+- [—] npm unit test runner (skipped)
+- [x] `PARSER_FORMAT.md` updated
+- [~] **Verification gate:** user confirms format match; synthetic aligned to cov-format-errors
 
 ---
 
