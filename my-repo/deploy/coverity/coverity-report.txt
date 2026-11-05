@@ -1,0 +1,57 @@
+Detected 7 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
+
+interstellar/src/thruster_control.c:7:5: CID 90001 (#1 of 1):
+  Type: Explicit null dereferenced (FORWARD_NULL)
+  Classification: Unclassified
+  Severity: Unspecified
+
+interstellar/src/nav_reader.c:13:9:
+  1. returned_null: return NULL;
+interstellar/src/nav_helpers.c:7:5:
+  2. assignment: active_nav_reader = reader;
+interstellar/src/thruster_control.c:7:5:
+  3. var_deref_op: Dereferencing null pointer "reader".
+
+interstellar/lib/log/log_format.c:7:5: CID 90002 (#1 of 1):
+  Type: MISRA C-2012 Standard Libraries (MISRA C-2012 Rule 21.6, Advisory)
+
+interstellar/lib/log/log_format.c:7:5:
+  1. misra_c_2012_rule_21_6_violation: Use of library function "printf".
+interstellar/lib/log/log_format.c:7:5:
+  2. format_string: printf("SYS:%s:READY", subsystem);
+
+interstellar/src/buffer_ops.c:9:9: CID 90003 (#1 of 1):
+  Type: MISRA C-2012 Arrays (MISRA C-2012 Rule 18.1, Required)
+
+interstellar/src/buffer_ops.c:9:9:
+  1. misra_c_2012_rule_18_1_violation: Array indexing may be out of bounds.
+interstellar/src/buffer_ops.c:16:5:
+  2. misra_c_2012_rule_18_2_violation: Access beyond the bounds of an array.
+
+interstellar/src/nav_reader.c:15:5: CID 90004 (#1 of 1):
+  Type: Structurally dead code (DEADCODE)
+
+interstellar/src/nav_reader.c:15:5:
+  1. dead_code: Execution cannot reach this statement: return (NavReader *)malloc(sizeof(NavReader));
+
+interstellar/src/main.c:10:5: CID 90005 (#1 of 1):
+  Type: Dereference after null check (FORWARD_NULL)
+
+interstellar/src/main.c:9:5:
+  1. assigned_pointer: Assigning: "reader" = "nav_get_reader()" return value.
+interstellar/src/main.c:10:5:
+  2. unchecked_value: Calling "nav_bind_reader(reader)" with possibly null "reader".
+
+interstellar/src/heat shield.c:7:9: CID 90006 (#1 of 1):
+  Type: Explicit null dereferenced (FORWARD_NULL)
+
+interstellar/src/heat shield.c:5:5:
+  1. var_deref_op: NavReader *reader = nav_active_reader();
+interstellar/src/heat shield.c:7:9:
+  2. var_deref_op: Dereferencing null pointer "reader".
+
+/Users/ankinelaturu/c-keil-root/interstellar/src/thruster_control.c:7:5: CID 90007 (#1 of 1):
+  Type: Explicit null dereferenced (FORWARD_NULL)
+
+/Users/ankinelaturu/c-keil-root/interstellar/src/thruster_control.c:7:5:
+  1. var_deref_op: Dereferencing null pointer "reader".

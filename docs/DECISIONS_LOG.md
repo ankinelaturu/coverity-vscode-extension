@@ -1,0 +1,84 @@
+# Decisions log
+
+Record non-obvious choices here so later edits (human or agent) stay consistent. Format: lightweight ADR.
+
+**How to add an entry:** Copy the template at the bottom, assign the next `DEC-###` id, set status `Accepted` | `Superseded` | `Proposed`.
+
+---
+
+## Index
+
+| ID | Title | Status | Date |
+|----|-------|--------|------|
+| DEC-001 | Documentation-first; no code until design/checklist exist | Accepted | 2026-11-04 |
+| DEC-002 | Parser lives in single adapter module | Accepted | 2026-11-04 |
+| DEC-003 | Primary install target is desktop VS Code folder copy | Accepted | 2026-11-04 |
+| DEC-004 | Synthetic report uses cov-format-errors multiline grammar | Accepted | 2026-11-04 |
+
+---
+
+## DEC-004 — cov-format-errors multiline as primary report shape
+
+**Status:** Accepted  
+**Date:** 2026-11-04
+
+**Context:** User’s real error file matches `cov-format-errors` multiline (MISRA `Type:` lines, per-event locations). Interstellar fixture was trace-only.
+
+**Decision:** Rewrite `my-repo/deploy/coverity/coverity-report.txt` with occurrence headers, `Type: … (CHECKER)`, optional Classification/Severity, and indented numbered events. Document in `PARSER_FORMAT.md`. Parser implementation should target this first.
+
+**Consequences:** Error type grouping uses `Type:` checker (e.g. `FORWARD_NULL`, MISRA rule ids); event tags remain step labels only.
+
+---
+
+## DEC-001 — Documentation-first milestone
+
+**Status:** Accepted  
+**Date:** 2026-11-04
+
+**Context:** Greenfield repo; large requirements doc in `CURSOR_COVERITY_EXTENSION_PROMPT.md`.
+
+**Decision:** Create `docs/` design, checklist, parser guide, acceptance, and tracking files before application code.
+
+**Consequences:** Implementation checklist M0 partially complete; M1+ remain open.
+
+---
+
+## DEC-002 — Single parser adapter module
+
+**Status:** Accepted  
+**Date:** 2026-11-04  
+**Source:** User clarification in prompt § “adaptable report grammar”
+
+**Decision:** All line/boundary rules live in one module (e.g. `src/parser/textReportParser.ts`). UI, tracking, and persistence must not embed format regexes.
+
+**Consequences:** `PARSER_FORMAT.md` points editors to one file; fixtures required for each grammar change.
+
+---
+
+## DEC-003 — Install target VS Code (not Cursor-only)
+
+**Status:** Accepted  
+**Date:** 2026-11-04
+
+**Decision:** Build and verify staged folder for standard desktop VS Code user extensions dir; document Cursor path differences without assuming they match.
+
+**Consequences:** README must mention untested hosts; Extension Development Host validation on VS Code.
+
+---
+
+## Template
+
+```markdown
+## DEC-NNN — Short title
+
+**Status:** Proposed | Accepted | Superseded by DEC-NNN  
+**Date:** YYYY-MM-DD
+
+**Context:** …
+
+**Decision:** …
+
+**Alternatives considered:** …
+
+**Consequences:** …
+```
