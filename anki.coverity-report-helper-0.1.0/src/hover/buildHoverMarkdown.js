@@ -6,6 +6,7 @@ const { traceStepCellDataUri, TRACE_ROW_HEIGHT, TRACE_COL_WIDTH } = require('./t
 const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPillSvg');
 const { cycleHoverFindingCommandUri } = require('./hoverFindingCarousel');
 const { fullTraceCommandUri } = require('../tracePeek/tracePeekPanel');
+const { formatStepLabel, stepMarkdownIndent } = require('../model/stepDisplay');
 
 const TRACE_SECTION_LABEL = 'Trace Steps';
 
@@ -55,7 +56,11 @@ function linkCellHtml(finding, i, eventIndex) {
   const href = navigateStepUri(finding.id, i);
   const loc = `${step.location.rawPath}:${step.location.line}`;
   const current = i === eventIndex;
-  const pillText = current ? `${label} — ${loc} (current)` : `${label} — ${loc}`;
+  const stepId = formatStepLabel(step, i + 1);
+  const prefix = stepMarkdownIndent(step);
+  const pillText = current
+    ? `${prefix}${stepId}. ${label} — ${loc} (current)`
+    : `${prefix}${stepId}. ${label} — ${loc}`;
   const pill = linkPillDataUri(pillText, current);
   const alt = escapeHtml(pill.text);
   return (
@@ -99,7 +104,9 @@ function appendTraceMarkdownList(md, finding, eventIndex) {
   for (let i = 0; i < finding.events.length; i++) {
     const step = finding.events[i];
     const loc = `${step.location.rawPath}:${step.location.line}`;
-    const link = `[${step.stepNumber || i + 1}. ${escapeMd(step.label)}](${navigateStepUri(finding.id, i)})`;
+    const stepId = formatStepLabel(step, i + 1);
+    const prefix = stepMarkdownIndent(step);
+    const link = `[${prefix}${stepId}. ${escapeMd(step.label)}](${navigateStepUri(finding.id, i)})`;
     if (i === eventIndex) {
       md.appendMarkdown(`**→ ${link} (current)** — \`${escapeMd(loc)}\`\n`);
     } else {
@@ -145,7 +152,10 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
   const title = finding.typeTitle || checker;
   const stepTotal = finding.events.length;
   md.appendMarkdown(`**${escapeMd(title)}** (\`${escapeMd(checker)}\`)\n\n`);
-  md.appendMarkdown(`**Trace step ${eventIndex + 1} of ${stepTotal}**\n\n`);
+  const currentStepId = formatStepLabel(ev, eventIndex + 1);
+  md.appendMarkdown(
+    `**Trace step ${escapeMd(currentStepId)}** (${eventIndex + 1} of ${stepTotal})\n\n`
+  );
 
   const blurb = friendlyBlurb(finding, ev);
   if (blurb) {

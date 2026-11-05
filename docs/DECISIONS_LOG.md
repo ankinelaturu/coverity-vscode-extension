@@ -22,6 +22,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-010 | Milestone scope: skip M-final, compare, M6, M7, M14 | Accepted | 2026-11-05 |
 | DEC-011 | Cursor: trace strip in line-decorations column, not glyph margin | Accepted | 2026-11-05 |
 | DEC-013 | Full Trace in sidebar WebviewView, not editor WebviewPanel | Accepted | 2026-11-05 |
+| DEC-014 | Nested trace step prefixes (`1.1.`) flat list + UI indent | Accepted | 2026-11-05 |
+
+---
+
+## DEC-014 — Nested trace step numbering
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Parser accepts dotted step prefixes (`1.`, `1.1.`, `2.1.`). Events stay a flat ordered list with `stepPath` / `stepDepth`. Full Trace and hover show hierarchical labels and indent; navigation remains `eventIndex`.
 
 ---
 

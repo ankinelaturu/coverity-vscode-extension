@@ -68,7 +68,7 @@ interstellar/lib/log/log_format.c:7:5:
 | Absolute paths | Resolve as-is (e.g. `~/c-keil-root/...`) |
 | Workspace-relative paths | Resolve against **workspace / project root**, not report file directory |
 | `Type:` line | Regex: `Type:\s*(.+)\(([^)]+)\)\s*$` for title + checkerId (adjust for MISRA titles with nested parens) |
-| Event line | Leading whitespace; optional `N. `; label; first `:`; remainder = raw message/snippet |
+| Event line | Leading whitespace; optional `N.` or nested `N.M.` prefix; label; first `:`; remainder = raw message/snippet |
 | Unknown lines | Warning + line number; never silently drop |
 
 **MISRA `Type:` lines** often look like:
@@ -97,6 +97,9 @@ Examples in fixtures:
 |----------|------|-------|---------|
 | `  3. var_deref_op: Dereferencing null pointer "reader".` | 3 | `var_deref_op` | `Dereferencing null pointer "reader".` |
 | `  2. format_string: printf("SYS:%s:READY", subsystem);` | 2 | `format_string` | `printf("SYS:%s:READY", subsystem);` |
+| `  1.1. condition_true: Condition "x", taking true branch.` | 1.1 | `condition_true` | (payload) |
+
+Nested steps (fixture **CID 90100**, `nested_demo.c`): `1.`, `1.1.`, `1.2.`, `2.`, `2.1.`, `3.` — parsed as flat `events[]` with `stepPath` / `stepDepth`; UI indents sub-steps.
 
 ---
 

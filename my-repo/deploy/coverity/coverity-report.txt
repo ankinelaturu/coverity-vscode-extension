@@ -1,4 +1,4 @@
-Detected 8 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
+Detected 9 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
 
 interstellar/src/nav_reader.c:13:9: CID 90001 (#1 of 1):
   Type: Explicit null dereferenced (FORWARD_NULL)
@@ -73,3 +73,21 @@ interstellar/src/heat shield.c:7:9:
 
 /Users/ankinelaturu/c-keil-root/interstellar/src/thruster_control.c:7:5:
   1. var_deref_op: Dereferencing null pointer "reader".
+
+interstellar/src/nested_demo.c:13:10: CID 90100 (#1 of 1):
+  Type: Example nested trace (NESTED_DEMO)
+  Classification: Unclassified
+  Severity: Unspecified
+
+interstellar/src/nested_demo.c:5:3:
+  1. branch_enter: Entering fault handler path.
+interstellar/src/nested_demo.c:5:7:
+  1.1. condition_true: Condition "cfg->enable_retry", taking true branch.
+interstellar/src/nested_demo.c:6:9:
+  1.2. assignment: retry_count = 0;
+interstellar/src/nested_demo.c:9:3:
+  2. call_site: status = dispatch_request(buf);
+interstellar/src/nested_demo.c:10:7:
+  2.1. null_check: "buf" is null.
+interstellar/src/nested_demo.c:13:10:
+  3. var_deref_op: Dereferencing null pointer "buf".

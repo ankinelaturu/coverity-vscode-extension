@@ -11,8 +11,8 @@ const SCHEMA_VERSION = 1;
 /** Example: `  Type: Explicit null dereferenced (FORWARD_NULL)` */
 const TYPE_LINE_RE = /^\s*Type:\s*(.+)\s+\((.+)\)\s*$/;
 
-/** Example: `  1. returned_null: Reader *reader = get_reader();` */
-const NUMBERED_EVENT_RE = /^\s*(\d+)\.\s+([^:]+):\s*(.*)$/;
+/** Flat `1.` or nested `1.1.` / `2.1.3.` before label: payload */
+const NUMBERED_EVENT_RE = /^\s*((?:\d+\.)+)\s*([^:]+):\s*(.*)$/;
 
 const META_CLASSIFICATION_RE = /^\s*Classification:\s*(.*)\s*$/;
 const META_SEVERITY_RE = /^\s*Severity:\s*(.*)\s*$/;
@@ -247,16 +247,32 @@ function parseMetaLine(line, re) {
 }
 
 /**
+ * @param {string} dottedPrefix e.g. "1." or "1.1."
+ * @returns {{ stepPath: string, stepDepth: number, stepSegments: number[], stepNumber: number }}
+ */
+function parseStepPrefix(dottedPrefix) {
+  const stepPath = dottedPrefix.replace(/\.$/, '');
+  const stepSegments = stepPath.split('.').map((s) => parseInt(s, 10));
+  return {
+    stepPath,
+    stepDepth: stepSegments.length,
+    stepSegments,
+    stepNumber: stepSegments[0],
+  };
+}
+
+/**
  * @param {string} line
- * @returns {{ stepNumber: number, label: string, rawPayload: string } | null}
+ * @returns {{ stepPath: string, stepDepth: number, stepSegments: number[], stepNumber: number, label: string, rawPayload: string } | null}
  */
 function parseNumberedEventLine(line) {
   const m = line.match(NUMBERED_EVENT_RE);
   if (!m) {
     return null;
   }
+  const stepMeta = parseStepPrefix(m[1]);
   return {
-    stepNumber: parseInt(m[1], 10),
+    ...stepMeta,
     label: m[2].trim(),
     rawPayload: m[3],
   };
@@ -281,6 +297,9 @@ function buildEvent(index, numbered, location) {
   return {
     index,
     stepNumber: numbered.stepNumber,
+    stepPath: numbered.stepPath,
+    stepDepth: numbered.stepDepth,
+    stepSegments: numbered.stepSegments,
     label: numbered.label,
     rawPayload: numbered.rawPayload,
     location: {

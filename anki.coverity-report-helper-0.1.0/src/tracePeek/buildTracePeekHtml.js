@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const vscode = require('vscode');
 const { describe } = require('../lookup/lookup');
+const { formatStepLabel, stepIndentPx } = require('../model/stepDisplay');
 
 const CONTEXT_LINES = 2;
 
@@ -91,7 +92,10 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
     const message = (ev.rawPayload || '').trim();
     const canNavigate = Boolean(tracked?.uri && tracked.status !== 'unresolved');
     blocks.push({
-      stepNumber: ei + 1,
+      stepPath: formatStepLabel(ev, ei + 1),
+      stepDepth: ev.stepDepth || 1,
+      indentPx: stepIndentPx(ev),
+      traceIndex: ei + 1,
       eventIndex: ei,
       findingId: finding.id,
       isCurrent: ei === activeEventIndex,
@@ -123,8 +127,10 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
         })
         .join('');
 
+      const depthCls = b.stepDepth > 1 ? ` depth-${b.stepDepth}` : '';
       const hdrInner =
-        `<span class="row1"><span class="step">Step ${b.stepNumber} of ${n}</span> ` +
+        `<span class="row1"><span class="step">Step ${escapeHtml(b.stepPath)}</span> ` +
+        `<span class="trace-pos">(${b.traceIndex} of ${n})</span> ` +
         `<span class="meta">${meta}</span></span>` +
         `<span class="row2 loc">${loc}</span>` +
         `<span class="row3 msg">${msg}</span>`;
@@ -135,7 +141,10 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
           `</button>`
         : `<div class="hdr hdr-static" title="Location unresolved">${hdrInner}</div>`;
 
-      return `<section class="${cls}">${hdr}<table class="code">${codeRows}</table></section>`;
+      return (
+        `<section class="${cls}${depthCls}" style="margin-left:${b.indentPx}px">` +
+        `${hdr}<table class="code">${codeRows}</table></section>`
+      );
     })
     .join('');
 
@@ -197,6 +206,9 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
   .row2 { margin-top: 2px; }
   .row3 { margin-top: 4px; }
   .step { font-weight: 600; }
+  .trace-pos { opacity: 0.75; font-size: 0.85em; }
+  .block.depth-2 { border-left: 3px solid var(--vscode-editorInfo-foreground, #3794ff); }
+  .block.depth-3 { border-left: 3px solid var(--vscode-editorInfo-foreground, #3794ff); }
   .loc {
     font-family: var(--vscode-editor-font-family);
     font-size: 0.85em;
