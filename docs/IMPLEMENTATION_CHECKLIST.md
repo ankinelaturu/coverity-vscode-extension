@@ -30,7 +30,7 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 ## M2 — Parser adapter and fixtures
 
 - [x] `src/parser/textReportParser.js` — all format rules in one module
-- [ ] Constants/patterns at top with comments + examples ([PARSER_FORMAT.md](./PARSER_FORMAT.md))
+- [x] Constants/patterns at top with comments + examples ([PARSER_FORMAT.md](./PARSER_FORMAT.md))
 - [x] Synthetic fixture: `my-repo/deploy/coverity/coverity-report.txt` (multiline Type + trace)
 - [—] JSON snapshot unit tests (minimal testing per user request)
 - [x] Parse warnings + line numbers
@@ -38,7 +38,7 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 - [x] `node scripts/inspect-report.js <file>`
 - [—] npm unit test runner (skipped)
 - [x] `PARSER_FORMAT.md` updated
-- [~] **Verification gate:** user confirms format match; synthetic aligned to cov-format-errors
+- [x] **Verification gate:** user confirms format match; synthetic aligned to cov-format-errors
 
 ---
 

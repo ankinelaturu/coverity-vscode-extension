@@ -5,12 +5,13 @@
  * All format-specific rules live in this module — see docs/PARSER_FORMAT.md.
  */
 
+/** Parsed report + finding object schema revision (see docs/PARSER_FORMAT.md). */
 const SCHEMA_VERSION = 1;
 
-/** Matches `  Type: Title (CHECKER_ID)` including MISRA titles with nested parentheses (greedy last paren group). */
+/** Example: `  Type: Explicit null dereferenced (FORWARD_NULL)` */
 const TYPE_LINE_RE = /^\s*Type:\s*(.+)\s+\((.+)\)\s*$/;
 
-/** Numbered event: `  1. tag: payload` */
+/** Example: `  1. returned_null: Reader *reader = get_reader();` */
 const NUMBERED_EVENT_RE = /^\s*(\d+)\.\s+([^:]+):\s*(.*)$/;
 
 const META_CLASSIFICATION_RE = /^\s*Classification:\s*(.*)\s*$/;
@@ -305,6 +306,7 @@ function fingerprintReportText(text) {
 }
 
 module.exports = {
+  SCHEMA_VERSION,
   parseCoverityTextReport,
   fingerprintReportText,
   parseLocationLine,
