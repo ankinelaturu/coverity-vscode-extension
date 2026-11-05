@@ -48,6 +48,8 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Problems** — filter by source `Coverity Report`
 - **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
 
+**Diagnostic severity:** the **last trace step** (main occurrence) is published as **Warning**; earlier steps are **Information** (context only). Source is always `Coverity Report`. Overview ruler highlights active vs other steps of the same finding when trace badges are enabled.
+
 **Explorer badge vs Coverity duck logo:** VS Code’s `FileDecorationProvider` only allows a **short text badge** (1–2 characters) and **theme colors**, not custom images. You cannot put the official Coverity duck PNG in the tree. Default badge is **🦆1**–**🦆9** (unique findings on that file/folder) or **🦆+** when count ≥ 10 (exact count in tooltip). Use `"count"` for numeric-only badges.
 
 Commands: **Command Palette** → `Coverity:` …
@@ -67,6 +69,12 @@ From this folder:
 ```bash
 node scripts/inspect-report.js /path/to/report.txt
 ```
+
+## Path resolution
+
+- Report paths may be **absolute** (Windows drive letters supported) or **relative to the workspace folder root** (not the report file’s directory).
+- **Multi-root:** each folder root is tried; use **Coverity: Configure Path Mapping** for `reportPrefix` → `workspaceFolder` when build paths differ from the repo layout.
+- Unresolved steps stay visible in Problems/hover with a mapping hint; the extension never runs or executes path strings from the report.
 
 ## Sample workspace
 

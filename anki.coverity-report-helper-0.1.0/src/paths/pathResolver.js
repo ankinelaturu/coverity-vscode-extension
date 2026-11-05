@@ -7,6 +7,9 @@ const { normalizePathKey } = require('../model/indexBuilder');
 /**
  * Resolves report paths against workspace folder roots and user mappings.
  * Report-relative paths are relative to workspace root, NOT the report file directory.
+ *
+ * Security: paths from the report are used only for filesystem existence checks and
+ * opening documents — never executed as shell commands or scripts.
  */
 
 /**

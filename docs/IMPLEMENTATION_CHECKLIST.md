@@ -103,15 +103,15 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M8 — Navigation, range matching, diagnostics
 
-- [ ] Shared active finding/step state
-- [ ] Open document + reveal range + selection
-- [ ] Snippet matcher with uncertainty and column disambiguation
-- [ ] Coordinate mapping module (document assumptions)
-- [ ] DiagnosticCollection per workspace; source `Coverity Report`
-- [ ] Display policy for main vs supporting steps documented in README/decisions
-- [ ] Overview ruler decorations
-- [ ] Auto-show markers when opening source file
-- [ ] Cross-file step navigation
+- [x] Shared active finding/step state
+- [x] Open document + reveal range + selection
+- [x] Snippet matcher with uncertainty and column disambiguation
+- [x] Coordinate mapping module (document assumptions)
+- [x] DiagnosticCollection per workspace; source `Coverity Report`
+- [x] Display policy for main vs supporting steps documented in README/decisions
+- [x] Overview ruler decorations
+- [x] Auto-show markers when opening source file
+- [x] Cross-file step navigation
 
 ---
 
