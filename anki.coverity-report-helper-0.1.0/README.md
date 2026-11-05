@@ -46,7 +46,7 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Badge style** (`coverity.explorerBadgeStyle`): `duck` (default: `🦆1`–`🦆9`, or `🦆+` for 10+), `count` (numeric only), or legacy `brand` (same as `duck`)
 - **Extension icon** — `media/duck.svg` (Extensions list only; **not** in the file tree)
 - **Problems** — filter by source `Coverity Report`
-- **Editor** — squiggles, hover trace links, optional CodeLens, Alt+Shift+Up/Down for trace steps
+- **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
 
 **Explorer badge vs Coverity duck logo:** VS Code’s `FileDecorationProvider` only allows a **short text badge** (1–2 characters) and **theme colors**, not custom images. You cannot put the official Coverity duck PNG in the tree. Default badge is **🦆1**–**🦆9** (unique findings on that file/folder) or **🦆+** when count ≥ 10 (exact count in tooltip). Use `"count"` for numeric-only badges.
 
