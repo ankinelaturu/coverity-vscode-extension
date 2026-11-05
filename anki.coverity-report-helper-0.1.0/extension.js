@@ -8,6 +8,7 @@ const { registerHoverProvider } = require('./src/hover/hoverProvider');
 const { registerCodeLens } = require('./src/codelens/codelensProvider');
 const { DecorationManager } = require('./src/decorations/decorations');
 const { registerFileDecorations } = require('./src/explorer/fileDecorations');
+const { registerReportStatusBar } = require('./src/ui/reportStatusBar');
 const { rerunCoverity } = require('./src/rerun/rerun');
 const { compareRuns } = require('./src/compare/compareRuns');
 
@@ -31,6 +32,7 @@ function activate(context) {
     registerFileDecorations(session),
     registerHoverProvider(session),
     registerCodeLens(session),
+    registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       session.activeEditorUri = editor?.document.uri ?? null;

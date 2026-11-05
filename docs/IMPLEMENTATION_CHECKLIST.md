@@ -57,27 +57,28 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M4 — Load report command and parse status
 
-- [ ] Load Report (file picker); remember path in workspace/memento
-- [ ] Reload Report (explicit)
-- [ ] Status bar or tree message: finding count, warning count
-- [ ] UI to inspect parse warnings / unmatched blocks (output channel or tree node)
-- [ ] Original report file never modified by extension
+- [x] Load Report (file picker); remember path in workspace/memento
+- [x] Reload Report (explicit)
+- [x] Status bar or tree message: finding count, warning count
+- [x] UI to inspect parse warnings / unmatched blocks (output channel or tree node)
+- [x] Original report file never modified by extension
 
 ---
 
 ## M5 — Path resolution
 
-- [ ] Normalize paths (Windows drive, slashes, spaces, relative)
-- [ ] Multi-root workspace support
-- [ ] Configuration: report path prefix → workspace folder mappings
-- [ ] Unresolved locations visible; **Configure path mapping** command
-- [ ] Tests: Windows path, relative path, duplicate basename (must not pick wrong file)
-- [ ] Document: no execution of paths from report
+- [x] Normalize paths (Windows drive, slashes, spaces, relative)
+- [x] Multi-root workspace support
+- [x] Configuration: report path prefix → workspace folder mappings
+- [x] Unresolved locations visible; **Configure path mapping** command
+- [—] Tests: Windows path, relative path, duplicate basename (must not pick wrong file)
+- [x] Document: no execution of paths from report
 
 ---
 
 ## M6 — Findings tree — Files layout (default)
 
+- [—] **Out of scope (DEC-008):** Explorer + Problems + editor instead of sidebar tree
 - [ ] Tree view `Coverity Findings` registered
 - [ ] Files layout: file → finding → steps (collapse single-step redundancy)
 - [ ] Finding row: title/checker when known, path context, step count
@@ -88,6 +89,7 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M7 — Layouts, filters, selection
 
+- [—] **Out of scope (DEC-008)** with M6
 - [ ] View by: Files / Folders / Error type (mutually exclusive)
 - [ ] Folders layout: only folders on report paths
 - [ ] Error type: checker groups, unknown bucket, unique counts in labels/tooltips
