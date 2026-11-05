@@ -27,3 +27,10 @@ cc -Iinclude -Isrc -o demo \
 Pair with [`../deploy/coverity/coverity-report.txt`](../deploy/coverity/coverity-report.txt). Open **`my-repo`** as the workspace folder; report paths like `interstellar/src/main.c` are relative to **`my-repo`**, not to `deploy/coverity/`.
 
 The report is **synthetic** multiline output (MISRA + FORWARD_NULL `Type:` lines), modeled on `cov-format-errors --text-output-style multiline`, not a verified export from your pipeline.
+
+**Trace demos in the fixture**
+
+| CID | Shape |
+|-----|--------|
+| **90001** | **5 steps** across **3 files** (`nav_reader.c`, `nav_helpers.c`, `thruster_control.c`) |
+| **90003** | **4 steps** in **one file** (`buffer_ops.c`) |

@@ -1,16 +1,20 @@
 Detected 7 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
 
-interstellar/src/thruster_control.c:7:5: CID 90001 (#1 of 1):
+interstellar/src/nav_reader.c:13:9: CID 90001 (#1 of 1):
   Type: Explicit null dereferenced (FORWARD_NULL)
   Classification: Unclassified
   Severity: Unspecified
 
+interstellar/src/nav_reader.c:12:9:
+  1. condition_true: Condition "nav_simulate_probe_fault()", taking true branch.
 interstellar/src/nav_reader.c:13:9:
-  1. returned_null: return NULL;
+  2. returned_null: return NULL;
 interstellar/src/nav_helpers.c:7:5:
-  2. assignment: active_nav_reader = reader;
+  3. assignment: active_nav_reader = reader;
+interstellar/src/thruster_control.c:6:5:
+  4. var_assign: Assigning: "reader" = "nav_active_reader()" return value.
 interstellar/src/thruster_control.c:7:5:
-  3. var_deref_op: Dereferencing null pointer "reader".
+  5. var_deref_op: Dereferencing null pointer "reader".
 
 interstellar/lib/log/log_format.c:7:5: CID 90002 (#1 of 1):
   Type: MISRA C-2012 Standard Libraries (MISRA C-2012 Rule 21.6, Advisory)
@@ -20,13 +24,17 @@ interstellar/lib/log/log_format.c:7:5:
 interstellar/lib/log/log_format.c:7:5:
   2. format_string: printf("SYS:%s:READY", subsystem);
 
-interstellar/src/buffer_ops.c:9:9: CID 90003 (#1 of 1):
+interstellar/src/buffer_ops.c:22:9: CID 90003 (#1 of 1):
   Type: MISRA C-2012 Arrays (MISRA C-2012 Rule 18.1, Required)
 
-interstellar/src/buffer_ops.c:9:9:
-  1. misra_c_2012_rule_18_1_violation: Array indexing may be out of bounds.
-interstellar/src/buffer_ops.c:16:5:
-  2. misra_c_2012_rule_18_2_violation: Access beyond the bounds of an array.
+interstellar/src/buffer_ops.c:8:5:
+  1. overflow_expr: Expression "dst_cap + 1" may exceed representable range.
+interstellar/src/buffer_ops.c:19:5:
+  2. assignment: Assigning: "limit" = "telemetry_limit(dst_cap)" return value.
+interstellar/src/buffer_ops.c:21:5:
+  3. loop_condition: Loop condition "i <= limit" may iterate past buffer end.
+interstellar/src/buffer_ops.c:22:9:
+  4. misra_c_2012_rule_18_1_violation: Array indexing may be out of bounds.
 
 interstellar/src/nav_reader.c:15:5: CID 90004 (#1 of 1):
   Type: Structurally dead code (DEADCODE)

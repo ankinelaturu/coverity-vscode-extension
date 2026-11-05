@@ -11,18 +11,23 @@
 ## 1. Canonical sample block (from Interstellar fixture)
 
 ```text
-interstellar/src/thruster_control.c:7:5: CID 90001 (#1 of 1):
+interstellar/src/nav_reader.c:13:9: CID 90001 (#1 of 1):
   Type: Explicit null dereferenced (FORWARD_NULL)
-  Classification: Unclassified
-  Severity: Unspecified
+  …
 
+interstellar/src/nav_reader.c:12:9:
+  1. condition_true: Condition "nav_simulate_probe_fault()", taking true branch.
 interstellar/src/nav_reader.c:13:9:
-  1. returned_null: return NULL;
+  2. returned_null: return NULL;
 interstellar/src/nav_helpers.c:7:5:
-  2. assignment: active_nav_reader = reader;
+  3. assignment: active_nav_reader = reader;
+interstellar/src/thruster_control.c:6:5:
+  4. var_assign: Assigning: "reader" = "nav_active_reader()" return value.
 interstellar/src/thruster_control.c:7:5:
-  3. var_deref_op: Dereferencing null pointer "reader".
+  5. var_deref_op: Dereferencing null pointer "reader".
 ```
+
+Four-step trace in one file (CID 90003, `buffer_ops.c`): steps 1–4 all under `interstellar/src/buffer_ops.c`.
 
 MISRA example (same file):
 
