@@ -1,8 +1,6 @@
 'use strict';
 
 const vscode = require('vscode');
-const { describe } = require('../lookup/lookup');
-
 /**
  * Markdown hover with step context and command links for trace navigation.
  */
@@ -28,11 +26,6 @@ function registerHoverProvider(session) {
       const checker = finding.checkerId || 'Unknown';
       const title = finding.typeTitle || checker;
       md.appendMarkdown(`**${escapeMd(title)}** (\`${escapeMd(checker)}\`)\n\n`);
-      md.appendMarkdown(`Step **${eventIndex + 1}** of **${finding.events.length}** · \`${escapeMd(ev.label)}\`\n\n`);
-      const hint = describe(finding.checkerId, ev.label);
-      if (hint) {
-        md.appendMarkdown(`_${escapeMd(hint)}_\n\n`);
-      }
       if (ev.rawPayload) {
         md.appendMarkdown('```\n' + ev.rawPayload + '\n```\n\n');
       }
