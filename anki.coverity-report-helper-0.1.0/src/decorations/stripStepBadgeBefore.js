@@ -31,12 +31,11 @@ function beforeStripStepBadge(widthPx, layout, stepNumber, isActiveStep) {
   const stroke = isActiveStep ? COLORS.activeStroke : COLORS.inactiveStroke;
   const textColor = isActiveStep ? COLORS.activeText : COLORS.inactiveText;
   const fontSize = stepNumber > 99 ? 7 : stepNumber > 9 ? 8 : 9;
-  const borderW = isActiveStep ? 2 : 1;
-  const inner = diameter - 2 * borderW;
+  const label = stepNumber < 10 ? `\u2009${stepNumber}\u2009` : String(stepNumber);
 
   return {
     before: {
-      contentText: String(stepNumber),
+      contentText: label,
       width: `${diameter}px`,
       height: `${diameter}px`,
       margin: `${padTop}px 0 0 ${padLeft}px`,
@@ -45,8 +44,8 @@ function beforeStripStepBadge(widthPx, layout, stepNumber, isActiveStep) {
       color: textColor,
       fontWeight: isActiveStep ? 'bold' : '600',
       fontSize: `${fontSize}px`,
-      border: `${borderW}px solid ${stroke}`,
-      textDecoration: `none; display:inline-block; box-sizing:border-box; text-align:center; line-height:${inner}px`,
+      border: `${isActiveStep ? 2 : 1}px solid ${stroke}`,
+      textDecoration: 'none',
     },
   };
 }

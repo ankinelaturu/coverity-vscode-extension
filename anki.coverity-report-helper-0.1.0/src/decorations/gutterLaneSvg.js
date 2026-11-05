@@ -125,34 +125,27 @@ function assignTraceLanes(steps, laneCount) {
 
 /** Compact single-lane step badge for gutter when multi-lane mode is off. */
 function buildSimpleGutterStepSvg(stepNumber, isActive) {
-  return buildStepBadgeSvg(stepNumber, isActive, 18);
-}
-
-/** Filled circle + step number; `sizePx` is width and height of the square badge icon. */
-function buildStepBadgeSvg(stepNumber, isActive, sizePx) {
-  const size = Math.max(14, sizePx);
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2 - 1;
+  const w = 18;
+  const h = ROW_HEIGHT;
+  const cy = h / 2;
+  const cx = w / 2;
+  const r = 6;
   const fill = isActive ? COLORS.activeFill : COLORS.inactiveFill;
+  const stroke = isActive ? COLORS.activeStroke : COLORS.inactiveStroke;
   const text = isActive ? COLORS.activeText : COLORS.inactiveText;
-  const fontSize = stepNumber > 9 ? 7 : 9;
+  const sw = isActive ? 2 : 1;
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`,
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>`,
-    `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}" font-weight="${
-      isActive ? 700 : 600
-    }" font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="${text}">${stepNumber}</text>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`,
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`,
+    `<text x="${cx}" y="${cy + 3}" text-anchor="middle" font-size="8" font-weight="${isActive ? 700 : 500}" font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="${text}">${stepNumber}</text>`,
     '</svg>',
   ].join('');
 }
 
 module.exports = {
   ROW_HEIGHT,
-  COLORS,
   gutterWidth,
   buildGutterLaneRowSvg,
   buildSimpleGutterStepSvg,
-  buildStepBadgeSvg,
   assignTraceLanes,
 };

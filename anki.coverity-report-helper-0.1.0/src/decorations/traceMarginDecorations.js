@@ -2,25 +2,51 @@
 
 const vscode = require('vscode');
 const { gutterWidth } = require('./gutterLaneSvg');
-const { beforeStripStepBadge } = require('./stripStepBadgeBefore');
 const { lineDecorationRange } = require('./editorLineRange');
 const { stripLineLayout } = require('./codeLensLayout');
-
-const EDITOR_BG = new vscode.ThemeColor('editor.background');
 
 /**
  * One `before` per line (dual decoration types stacked horizontally and hid step labels in Cursor).
  */
-function beforeStripCell(widthPx, layout, contentText) {
-  return {
-    before: {
-      contentText,
-      width: `${widthPx}px`,
-      height: layout.heightPx,
-      margin: '0',
-      backgroundColor: EDITOR_BG,
-    },
+function beforeStripCell(widthPx, layout, contentText, textStyle) {
+  const before = {
+    contentText,
+    width: `${widthPx}px`,
+    height: layout.heightPx,
+    margin: '0',
+    backgroundColor: new vscode.ThemeColor('editor.background'),
   };
+  if (textStyle) {
+    before.color = textStyle.color;
+    before.fontWeight = textStyle.fontWeight;
+    if (textStyle.fontFamily) {
+      before.fontFamily = textStyle.fontFamily;
+    }
+  }
+  return { before };
+}
+
+/** Figure spaces — Cursor trims normal spaces; fixed width keeps the strip px size unchanged. */
+const STRIP_PAD = '\u2007';
+
+/**
+ * @example in-file ordinals 1–4 → "1□□□", "□2□□", "□□3□", "□□□4" (□ = figure space)
+ */
+function formatStepInStrip(stepNumber, inFileOrdinal, fieldChars) {
+  const num = String(stepNumber);
+  const lead = Math.max(0, inFileOrdinal - 1);
+  const trail = Math.max(0, fieldChars - lead - num.length);
+  return STRIP_PAD.repeat(lead) + num + STRIP_PAD.repeat(trail);
+}
+
+function stripLabelFieldChars(rawSteps, marginWidthPx) {
+  if (rawSteps.length === 0) {
+    return 1;
+  }
+  const maxNumLen = Math.max(...rawSteps.map((s) => String(s.eventIndex + 1).length));
+  const minChars = rawSteps.length - 1 + maxNumLen;
+  const widthChars = Math.floor(marginWidthPx / 7);
+  return Math.max(minChars, widthChars);
 }
 
 function uriMatchesDocument(trackedUri, documentUri) {
@@ -96,12 +122,15 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
   const marginWidth = lanesEnabled ? gutterWidth(laneCount, laneWidth) : 22;
 
   const { rawSteps, activeEventIndex } = collectInFileTraceSteps(session, editor.document);
+  const labelFieldChars = stripLabelFieldChars(rawSteps, marginWidth);
 
-  /** @type {Map<number, { stepNumber: number, isActiveStep: boolean }>} */
+  /** @type {Map<number, { stepNumber: number, inFileOrdinal: number, isActiveStep: boolean }>} */
   const stepByLine = new Map();
-  for (const step of rawSteps) {
+  for (let i = 0; i < rawSteps.length; i++) {
+    const step = rawSteps[i];
     stepByLine.set(step.line, {
       stepNumber: step.eventIndex + 1,
+      inFileOrdinal: i + 1,
       isActiveStep: step.eventIndex === activeEventIndex,
     });
   }
@@ -109,14 +138,24 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
   const lineCount = editor.document.lineCount;
   /** @type {vscode.DecorationOptions[]} */
   const decorations = [];
+
   for (let line = 0; line < lineCount; line++) {
     const layout = stripLineLayout(line, lineCount, codeLensRows);
     const step = stepByLine.get(line);
     let renderOptions;
     if (step) {
-      renderOptions = beforeStripStepBadge(marginWidth, layout, step.stepNumber, step.isActiveStep);
+      renderOptions = beforeStripCell(
+        marginWidth,
+        layout,
+        formatStepInStrip(step.stepNumber, step.inFileOrdinal, labelFieldChars),
+        {
+          color: step.isActiveStep ? '#e8a838' : '#b8bcc4',
+          fontWeight: step.isActiveStep ? 'bold' : 'normal',
+          fontFamily: 'monospace',
+        }
+      );
     } else {
-      renderOptions = beforeStripCell(marginWidth, layout, '\u200b');
+      renderOptions = beforeStripCell(marginWidth, layout, '\u200b', null);
     }
 
     decorations.push({
