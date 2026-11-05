@@ -129,23 +129,23 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M10 — Edit tracking
 
-- [ ] Range transform on `onDidChangeTextDocument`
-- [ ] Multi-edit, undo/redo, multiline, same-line columns
-- [ ] Overlap → uncertain status in model
-- [ ] Debounced refresh of tree/diagnostics/hover/lens
-- [ ] Unit tests for transform cases (see ACCEPTANCE matrix)
+- [x] Range transform on `onDidChangeTextDocument`
+- [x] Multi-edit, undo/redo, multiline, same-line columns
+- [x] Overlap → uncertain status in model
+- [x] Debounced refresh of tree/diagnostics/hover/lens
+- [—] Unit tests for transform cases (see ACCEPTANCE matrix)
 
 ---
 
 ## M11 — Persistence
 
-- [ ] Workspace storage schema version
-- [ ] Save/load adjusted ranges + content hashes + report hash
-- [ ] Invalidate on report change, content mismatch, corrupt cache
-- [ ] Dirty buffer handling
-- [ ] Reset adjusted locations command
-- [ ] File rename handling (best-effort)
-- [ ] Tests: match/mismatch restart, unsaved buffer
+- [x] Workspace storage schema version
+- [x] Save/load adjusted ranges + content hashes + report hash
+- [x] Invalidate on report change, content mismatch, corrupt cache
+- [x] Dirty buffer handling
+- [x] Reset adjusted locations command
+- [x] File rename handling (best-effort)
+- [—] Tests: match/mismatch restart, unsaved buffer
 
 ---
 
