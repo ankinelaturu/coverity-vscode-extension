@@ -23,7 +23,7 @@ function activate(context) {
 
   const session = new ReportSession(context);
   const diagnostics = new DiagnosticsManager(session);
-  const decorations = new DecorationManager(session);
+  const decorations = new DecorationManager(session, context);
 
   context.subscriptions.push(
     diagnostics,

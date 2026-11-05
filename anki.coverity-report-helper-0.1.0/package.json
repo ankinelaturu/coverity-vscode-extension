@@ -172,7 +172,21 @@
         "coverity.experimentalTraceLanes": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental gutter lanes are not implemented; setting reserved for future use."
+          "description": "Show fixed-width multi-lane trace graph in the gutter for the active finding (SVG gutter icons)."
+        },
+        "coverity.traceGutterLaneCount": {
+          "type": "number",
+          "default": 8,
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Number of horizontal lane columns in the trace gutter (fixed total width = lane count × lane width)."
+        },
+        "coverity.traceGutterLaneWidth": {
+          "type": "number",
+          "default": 8,
+          "minimum": 6,
+          "maximum": 16,
+          "description": "Pixel width of each lane column in the trace gutter (default 8×8 = 64px)."
         },
         "coverity.rerun.enabled": {
           "type": "boolean",
