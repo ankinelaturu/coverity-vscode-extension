@@ -10,6 +10,7 @@ const { DecorationManager } = require('./src/decorations/decorations');
 const { registerFileDecorations } = require('./src/explorer/fileDecorations');
 const { registerReportStatusBar } = require('./src/ui/reportStatusBar');
 const { rerunCoverity } = require('./src/rerun/rerun');
+const { showTracePeek, registerTracePeekCodeActions } = require('./src/tracePeek/tracePeekPanel');
 
 /** @type {vscode.OutputChannel | null} */
 let outputChannel = null;
@@ -31,6 +32,7 @@ function activate(context) {
     registerFileDecorations(session),
     registerHoverProvider(session),
     registerCodeLens(session),
+    registerTracePeekCodeActions(context, session),
     registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
     vscode.workspace.onDidRenameFiles((e) => session.handleFilesRenamed(e.files)),
@@ -117,6 +119,9 @@ function registerCommands(context, session) {
   });
   reg('coverity.showParseOutput', () => showParseOutput(session));
   reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
+  reg('coverity.showTracePeek', (findingId, eventIndex) =>
+    showTracePeek(context, session, findingId, eventIndex)
+  );
 }
 
 async function pickAndLoad(session) {
