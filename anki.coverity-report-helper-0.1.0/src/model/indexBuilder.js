@@ -1,7 +1,10 @@
 'use strict';
 
+/** In-memory index bundle schema (independent of parser SCHEMA_VERSION). */
+const INDEX_SCHEMA_VERSION = 1;
+
 /**
- * Builds indexes over immutable parse results for tree views and navigation.
+ * Builds indexes over immutable parse results for navigation and Explorer rollups.
  * One canonical finding; at most one file-node reference per finding per file.
  */
 
@@ -55,6 +58,8 @@ function buildReportIndexes(parsed) {
   const findingById = new Map(findings.map((f) => [f.id, f]));
 
   return {
+    schemaVersion: INDEX_SCHEMA_VERSION,
+    parserSchemaVersion: parsed.schemaVersion,
     findings,
     findingById,
     byFilePath,
@@ -79,6 +84,7 @@ function eventIndicesForFile(finding, fileKey) {
 }
 
 module.exports = {
+  INDEX_SCHEMA_VERSION,
   buildReportIndexes,
   normalizePathKey,
 };

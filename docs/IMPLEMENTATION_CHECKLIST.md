@@ -44,14 +44,14 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M3 — Canonical model and indexes
 
-- [ ] Schema version on report model
-- [ ] Report fingerprint / hash
-- [ ] Stable finding IDs (CID or deterministic local)
-- [ ] TraceEvent order, raw label/payload separation
-- [ ] File URI index (events → finding)
-- [ ] Checker index for Error type view
-- [ ] One finding ↔ many files indexing rules (no duplicate finding rows per file)
-- [ ] Unit tests for ID stability and duplicate blocks
+- [x] Schema version on report model
+- [x] Report fingerprint / hash
+- [x] Stable finding IDs (CID or deterministic local)
+- [x] TraceEvent order, raw label/payload separation
+- [x] File URI index (events → finding)
+- [x] Checker index for Error type view
+- [x] One finding ↔ many files indexing rules (no duplicate finding rows per file)
+- [—] Unit tests for ID stability and duplicate blocks
 
 ---
 
