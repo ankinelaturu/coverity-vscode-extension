@@ -146,12 +146,21 @@ function friendlyBlurb(finding, ev) {
  * @param {{ allowStepNav?: boolean, ambiguousHits?: object[] | null, activeFindingId?: string | null }} [options]
  */
 function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
-  const { allowStepNav = true, ambiguousHits = null, activeFindingId = null } = options;
+  const {
+    allowStepNav = true,
+    ambiguousHits = null,
+    activeFindingId = null,
+    useRichTimeline: useRichTimelineOpt,
+  } = options;
   const ev = finding.events[eventIndex];
   const md = new vscode.MarkdownString();
   md.isTrusted = true;
 
-  const useRichTimeline = vscode.workspace.getConfiguration('coverity').get('hoverRichTimeline', true);
+  const useRichTimeline =
+    useRichTimelineOpt ??
+    (typeof vscode.workspace?.getConfiguration === 'function'
+      ? vscode.workspace.getConfiguration('coverity').get('hoverRichTimeline', true)
+      : true);
   md.supportHtml = useRichTimeline;
 
   const checker = finding.checkerId || 'Unknown';

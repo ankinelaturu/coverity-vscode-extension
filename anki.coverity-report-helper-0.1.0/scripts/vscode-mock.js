@@ -12,4 +12,20 @@ class MarkdownString {
   }
 }
 
-module.exports = { MarkdownString };
+const workspace = {
+  getConfiguration(_section) {
+    return {
+      get(key, defaultValue) {
+        if (key === 'hoverRichTimeline') {
+          return defaultValue;
+        }
+        return defaultValue;
+      },
+    };
+  },
+};
+
+module.exports = {
+  MarkdownString,
+  workspace,
+};
