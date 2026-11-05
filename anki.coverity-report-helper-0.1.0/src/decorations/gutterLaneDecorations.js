@@ -52,10 +52,11 @@ function buildTraceLaneGutterDecorations(session, editor, context) {
   function pushRow(line, svgOpts) {
     const svg = buildGutterLaneRowSvg({ laneCount, laneWidth, ...svgOpts });
     const range = lineDecorationRange(editor.document, line);
+    const iconUri = gutterIconUriForSvg(context, svg);
     decorations.push({
       range,
       renderOptions: {
-        gutterIconPath: gutterIconUriForSvg(context, svg),
+        gutterIconPath: { light: iconUri, dark: iconUri },
         gutterIconSize: 'contain',
       },
     });

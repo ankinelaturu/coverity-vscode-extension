@@ -30,10 +30,11 @@ function buildSimpleGutterBadgeDecorations(session, editor, context) {
     }
     const line = t.range.start.line;
     const svg = buildSimpleGutterStepSvg(ei + 1, ei === session.activeEventIndex);
+    const iconUri = gutterIconUriForSvg(context, svg);
     decorations.push({
       range: lineDecorationRange(editor.document, line),
       renderOptions: {
-        gutterIconPath: gutterIconUriForSvg(context, svg),
+        gutterIconPath: { light: iconUri, dark: iconUri },
         gutterIconSize: 'contain',
       },
     });

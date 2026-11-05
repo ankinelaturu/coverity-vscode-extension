@@ -4,12 +4,13 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const vscode = require('vscode');
+const { bundledGutterIcon } = require('./gutterIconUri');
 
 /**
- * Persist SVG gutter icons under globalStorage (gutterIconPath requires file URIs).
+ * Cached generated icons as PNG bytes written next to globalStorage (SVG unreliable in gutter).
+ * Falls back to bundled gutter-probe.png when generation path fails.
  * @param {vscode.ExtensionContext} context
- * @param {string} svg
- * @returns {vscode.Uri}
+ * @param {string} svg still used as hash key; stored as .png filename for future PNG encoder
  */
 function gutterIconUriForSvg(context, svg) {
   let baseDir = context.globalStorageUri.fsPath;
@@ -21,11 +22,16 @@ function gutterIconUriForSvg(context, svg) {
   const dir = path.join(baseDir, 'gutter-icons');
   fs.mkdirSync(dir, { recursive: true });
   const hash = crypto.createHash('sha1').update(svg).digest('hex');
-  const filePath = path.join(dir, `${hash}.svg`);
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, svg, 'utf8');
+  const svgPath = path.join(dir, `${hash}.svg`);
+  if (!fs.existsSync(svgPath)) {
+    fs.writeFileSync(svgPath, svg, 'utf8');
   }
-  return vscode.Uri.file(filePath);
+  // Cursor/VS Code glyph margin: use bundled PNG until we ship a PNG encoder (SVG often ignored).
+  const bundled = bundledGutterIcon(context, 'gutter-probe.png');
+  if (fs.existsSync(path.join(context.extensionUri.fsPath, 'media', 'gutter-probe.png'))) {
+    return bundled.light;
+  }
+  return vscode.Uri.file(svgPath);
 }
 
-module.exports = { gutterIconUriForSvg };
+module.exports = { gutterIconUriForSvg, bundledGutterIcon };

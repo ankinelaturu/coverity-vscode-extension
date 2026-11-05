@@ -23,7 +23,7 @@ function activate(context) {
 
   const session = new ReportSession(context);
   const diagnostics = new DiagnosticsManager(session);
-  const decorations = new DecorationManager(session, context);
+  const decorations = new DecorationManager(session, context, outputChannel);
 
   context.subscriptions.push(
     diagnostics,
@@ -55,6 +55,7 @@ function activate(context) {
     })
   );
 
+  outputChannel.appendLine('Coverity Report Helper v0.1.3 activated. Gutter probe: coverity.gutterDebugProbe (default on).');
   maybeAutoLoadReport(session);
   decorations.update();
 }
@@ -105,6 +106,21 @@ function registerCommands(context, session) {
     }
   });
   reg('coverity.showParseOutput', () => showParseOutput(session));
+  reg('coverity.debugGutter', () => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      const { buildGutterProbeDecorations } = require('./src/decorations/gutterProbe');
+      const { logLines } = buildGutterProbeDecorations(editor, context);
+      for (const line of logLines) {
+        outputChannel?.appendLine(`[gutter] ${line}`);
+      }
+    }
+    decorations.update();
+    outputChannel?.show(true);
+    outputChannel?.appendLine(
+      '[gutter] v0.1.3 — Line 1 should have pink background + overview ruler stripe; glyph margin should show magenta PNG (not SVG).'
+    );
+  });
   reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
 }
 
