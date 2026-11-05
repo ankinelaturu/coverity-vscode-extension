@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -108,9 +108,23 @@
         "icon": "$(list-flat)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.pickProblemsTypeFilter",
+        "title": "Filter Coverity by Finding Type",
+        "icon": "$(filter)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "coverity.pickProblemsTypeFilter",
+          "when": "view == workbench.panel.markers.view && coverity.hasReport",
+          "group": "navigation@9"
+        }
+      ],
       "editor/context": [
         {
           "command": "coverity.showTracePeek",
@@ -128,7 +142,8 @@
         { "command": "coverity.rerunCoverity", "when": "coverity.hasReport" },
         { "command": "coverity.previousTraceStep", "when": "coverity.hasReport" },
         { "command": "coverity.nextTraceStep", "when": "coverity.hasReport" },
-        { "command": "coverity.showTracePeek", "when": "coverity.hasReport" }
+        { "command": "coverity.showTracePeek", "when": "coverity.hasReport" },
+        { "command": "coverity.pickProblemsTypeFilter", "when": "coverity.hasReport" }
       ]
     },
     "configuration": {

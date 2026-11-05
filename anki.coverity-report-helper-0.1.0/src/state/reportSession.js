@@ -36,6 +36,8 @@ class ReportSession {
     this.explorerDecorationIndex = null;
     /** @type {{ key: string, entries: { findingId: string, eventIndex: number }[], index: number } | null} */
     this._hoverFindingCarousel = null;
+    /** @type {string | null} When set, Problems publishes only this checkerId's findings. */
+    this.problemsCheckerFilter = null;
   }
 
   hasReport() {
@@ -49,6 +51,21 @@ class ReportSession {
 
   syncViewContexts() {
     vscode.commands.executeCommand('setContext', 'coverity.hasReport', this.hasReport());
+    vscode.commands.executeCommand(
+      'setContext',
+      'coverity.problemsTypeFilterActive',
+      Boolean(this.problemsCheckerFilter)
+    );
+  }
+
+  /** @returns {string | null} */
+  getProblemsCheckerFilter() {
+    return this.problemsCheckerFilter;
+  }
+
+  /** @param {string | null} checkerId */
+  setProblemsCheckerFilter(checkerId) {
+    this.problemsCheckerFilter = checkerId || null;
   }
 
   getMappings() {
@@ -64,6 +81,7 @@ class ReportSession {
     this.reportHash = fingerprintReportText(text);
     this.parsed = parseCoverityTextReport(text);
     this.indexes = buildReportIndexes(this.parsed);
+    this.problemsCheckerFilter = null;
     this.tracked.clear();
     await this.rebuildAllTracking();
     const cached = loadLocationCache(this.context.workspaceState, this.reportHash);
@@ -398,8 +416,12 @@ class ReportSession {
     }
     /** @type {Map<string, { ei: number, finding: object, ev: object, tracked: object }>} */
     const bestOnLine = new Map();
+    const checkerFilter = this.problemsCheckerFilter;
 
     for (const finding of this.indexes.findings) {
+      if (checkerFilter && (finding.checkerId || 'Unknown') !== checkerFilter) {
+        continue;
+      }
       for (let ei = 0; ei < finding.events.length; ei++) {
         const ev = finding.events[ei];
         const tracked = this.getTracked(finding.id, ei);

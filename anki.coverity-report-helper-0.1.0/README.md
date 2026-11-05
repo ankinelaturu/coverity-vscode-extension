@@ -45,7 +45,7 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Explorer** — badges and colors on **files and folders** (rollup), severity tint, multi-line tooltips listing findings
 - **Badge style** (`coverity.explorerBadgeStyle`): `duck` (default: `🦆1`–`🦆9`, or `🦆+` for 10+), `count` (numeric only), or legacy `brand` (same as `duck`)
 - **Extension icon** — `media/duck.svg` (Extensions list only; **not** in the file tree)
-- **Problems** — filter by source `Coverity Report`
+- **Problems** — filter by source `Coverity Report`; **filter icon** on the Problems title bar (or **Coverity: Filter Coverity by Finding Type**) picks a checker such as `FORWARD_NULL` and hides other Coverity markers until you choose **All finding types** (compiler/LSP problems are unchanged)
 - **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
 - **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, step markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
 

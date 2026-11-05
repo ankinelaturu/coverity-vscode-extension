@@ -9,6 +9,7 @@ const { registerCodeLens } = require('./src/codelens/codelensProvider');
 const { DecorationManager } = require('./src/decorations/decorations');
 const { registerFileDecorations } = require('./src/explorer/fileDecorations');
 const { registerReportStatusBar } = require('./src/ui/reportStatusBar');
+const { runPickProblemsTypeFilter } = require('./src/ui/problemsTypeFilter');
 const { rerunCoverity } = require('./src/rerun/rerun');
 const { showTracePeek, registerTracePeekCodeActions } = require('./src/tracePeek/tracePeekPanel');
 
@@ -68,6 +69,7 @@ function registerCommands(context, session) {
   reg('coverity.loadReport', () => pickAndLoad(session));
   reg('coverity.reloadReport', () => reload(session));
   reg('coverity.showProblems', () => vscode.commands.executeCommand('workbench.actions.view.problems'));
+  reg('coverity.pickProblemsTypeFilter', () => runPickProblemsTypeFilter(session));
   reg('coverity.configurePathMapping', () => configureMapping());
   reg('coverity.resetAdjustedLocations', () => session.resetAdjustedLocations());
   reg('coverity.navigateToStep', (findingId, eventIndex) => session.navigateToStep(findingId, eventIndex));
