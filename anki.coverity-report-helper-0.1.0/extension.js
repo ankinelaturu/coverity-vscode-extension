@@ -67,8 +67,42 @@ function registerCommands(context, session) {
   reg('coverity.configurePathMapping', () => configureMapping());
   reg('coverity.resetAdjustedLocations', () => session.resetAdjustedLocations());
   reg('coverity.navigateToStep', (findingId, eventIndex) => session.navigateToStep(findingId, eventIndex));
+  reg('coverity.setActiveFindingStep', (findingId, eventIndex) => {
+    session.setActive(findingId, eventIndex);
+    vscode.window.showInformationMessage(`Coverity: active trace step ${eventIndex + 1} (${findingId}).`);
+  });
+  reg('coverity.traceStepRelative', (findingId, eventIndex, delta) =>
+    session.navigateRelativeFrom(findingId, eventIndex, delta)
+  );
   reg('coverity.previousTraceStep', () => session.navigateRelative(-1));
   reg('coverity.nextTraceStep', () => session.navigateRelative(1));
+  reg('coverity.chooseFindingsAtLine', async (uriStr, line) => {
+    const uri = typeof uriStr === 'string' ? vscode.Uri.parse(uriStr) : uriStr;
+    const hits = session.getEventsOnLine(uri, line);
+    if (hits.length === 0) {
+      return;
+    }
+    if (hits.length === 1) {
+      return session.navigateToStep(hits[0].finding.id, hits[0].eventIndex);
+    }
+    const picked = await vscode.window.showQuickPick(
+      hits.map((h) => {
+        const f = h.finding;
+        const checker = f.checkerId || 'Unknown';
+        const title = f.typeTitle || checker;
+        return {
+          label: `${title} (${checker})`,
+          description: `Step ${h.eventIndex + 1} of ${f.events.length}`,
+          findingId: f.id,
+          eventIndex: h.eventIndex,
+        };
+      }),
+      { title: 'Coverity findings at this line' }
+    );
+    if (picked) {
+      return session.navigateToStep(picked.findingId, picked.eventIndex);
+    }
+  });
   reg('coverity.showParseOutput', () => showParseOutput(session));
   reg('coverity.rerunCoverity', () => rerunCoverity(session));
   reg('coverity.compareRuns', () => compareRuns(session));

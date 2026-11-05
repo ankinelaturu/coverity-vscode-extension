@@ -18,6 +18,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-006 | Gutter trace lanes deferred; badges + overview ruler only | Accepted | 2026-11-05 |
 | DEC-007 | Extension id `anki.coverity-report-helper`; folder rename deferred | Accepted | 2026-11-05 |
 | DEC-008 | No Coverity sidebar; Explorer decorations + Problems + editor | Accepted | 2026-11-05 |
+| DEC-009 | Native Peek uses VS Code diagnostics; hover is separate Markdown | Accepted | 2026-11-05 |
+
+---
+
+## DEC-009 — Peek vs hover for Coverity trace
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Inline **Peek** shows standard `Diagnostic` messages from `Coverity Report`; rich SVG timeline and step links live in **editor hover** only. Peek is not customized to render the timeline.
 
 ---
 

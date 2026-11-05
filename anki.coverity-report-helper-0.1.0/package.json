@@ -68,6 +68,21 @@
         "category": "Coverity"
       },
       {
+        "command": "coverity.setActiveFindingStep",
+        "title": "Set Active Coverity Finding Step",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.traceStepRelative",
+        "title": "Coverity Trace Step Relative",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.chooseFindingsAtLine",
+        "title": "Choose Coverity Finding at Line",
+        "category": "Coverity"
+      },
+      {
         "command": "coverity.previousTraceStep",
         "title": "Previous Trace Step",
         "icon": "$(arrow-up)",
@@ -127,6 +142,11 @@
               "workspaceFolder": { "type": "string" }
             }
           }
+        },
+        "coverity.hoverRichTimeline": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use SVG timeline table in hover; when false, use a plain Markdown step list."
         },
         "coverity.codeLensEnabled": {
           "type": "boolean",

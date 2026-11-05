@@ -9,6 +9,7 @@ const { matchEventRange } = require('../ranges/rangeMatcher');
 const { transformRangeForChange } = require('../tracking/rangeTracker');
 const { saveLocationCache, loadLocationCache, clearLocationCache } = require('../persistence/locationCache');
 const { rebuildExplorerDecorationIndex } = require('../explorer/decorationIndex');
+const { describe } = require('../lookup/lookup');
 
 const DIAGNOSTIC_SOURCE = 'Coverity Report';
 
@@ -254,15 +255,27 @@ class ReportSession {
     if (!this.activeFindingId) {
       return;
     }
-    const finding = this.getFinding(this.activeFindingId);
+    return this.navigateRelativeFrom(this.activeFindingId, this.activeEventIndex, delta);
+  }
+
+  /**
+   * Step prev/next for a specific finding (CodeLens / disambiguation).
+   */
+  navigateRelativeFrom(findingId, eventIndex, delta) {
+    const finding = this.getFinding(findingId);
     if (!finding) {
       return;
     }
-    const next = this.activeEventIndex + delta;
+    this.setActive(findingId, eventIndex);
+    const next = eventIndex + delta;
     if (next < 0 || next >= finding.events.length) {
       return;
     }
-    return this.navigateToStep(this.activeFindingId, next);
+    return this.navigateToStep(findingId, next);
+  }
+
+  getEventsOnLine(uri, line) {
+    return this.getEventsForUri(uri).filter(({ tracked }) => tracked.range.start.line === line);
   }
 
   /** Diagnostics grouped by document URI string */
@@ -285,7 +298,8 @@ class ReportSession {
           map.set(key, []);
         }
         const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
-        const msg = `[${finding.checkerId || 'Unknown'}] ${ev.label}: ${ev.rawPayload || title}`.trim();
+        const hint = describe(finding.checkerId, ev.label);
+        const msg = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
         const severity = isMain(ei)
           ? vscode.DiagnosticSeverity.Warning
           : vscode.DiagnosticSeverity.Information;

@@ -4,8 +4,35 @@ const vscode = require('vscode');
 const { buildCoverityHoverMarkdown } = require('./buildHoverMarkdown');
 
 /**
- * Markdown hover with SVG trace timeline and command links for navigation.
+ * Resolve which finding/step to show when one or more tracked ranges cover the cursor.
+ * @returns {{ finding: object, eventIndex: number, allowStepNav: boolean, ambiguousHits: object[] | null }}
  */
+function resolveHoverContext(session, hits) {
+  if (hits.length === 0) {
+    return null;
+  }
+  if (hits.length === 1) {
+    const { finding, eventIndex } = hits[0];
+    session.setActive(finding.id, eventIndex);
+    return { finding, eventIndex, allowStepNav: true, ambiguousHits: null };
+  }
+
+  const activeId = session.activeFindingId;
+  const activeHit = hits.find((h) => h.finding.id === activeId);
+  if (activeHit) {
+    session.setActive(activeHit.finding.id, activeHit.eventIndex);
+    return {
+      finding: activeHit.finding,
+      eventIndex: activeHit.eventIndex,
+      allowStepNav: true,
+      ambiguousHits: hits,
+    };
+  }
+
+  const { finding, eventIndex } = hits[0];
+  return { finding, eventIndex, allowStepNav: false, ambiguousHits: hits };
+}
+
 function registerHoverProvider(session) {
   return vscode.languages.registerHoverProvider(['c', 'cpp'], {
     provideHover(document, position) {
@@ -15,17 +42,18 @@ function registerHoverProvider(session) {
       const hits = session.getEventsForUri(document.uri).filter(({ tracked }) =>
         tracked.range.contains(position)
       );
-      if (hits.length === 0) {
+      const ctx = resolveHoverContext(session, hits);
+      if (!ctx) {
         return null;
       }
-      const hit = hits.length === 1 ? hits[0] : hits[0];
-      const { finding, eventIndex } = hit;
-      session.activeFindingId = finding.id;
-      session.activeEventIndex = eventIndex;
-      const md = buildCoverityHoverMarkdown(finding, eventIndex);
+      const md = buildCoverityHoverMarkdown(ctx.finding, ctx.eventIndex, {
+        allowStepNav: ctx.allowStepNav,
+        ambiguousHits: ctx.ambiguousHits,
+        activeFindingId: session.activeFindingId,
+      });
       return new vscode.Hover(md);
     },
   });
 }
 
-module.exports = { registerHoverProvider };
+module.exports = { registerHoverProvider, resolveHoverContext };

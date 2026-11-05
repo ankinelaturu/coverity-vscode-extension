@@ -117,13 +117,13 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M9 — Hover and trace commands
 
-- [ ] HoverProvider with escaped content
-- [ ] Step N of M, trace list, current emphasis
-- [ ] Trusted command links for step jumps
-- [ ] Previous / Next trace step commands (+ optional keybindings)
-- [ ] Multiple findings at location: disambiguation before prev/next
-- [ ] Fallback markdown list if timeline styling unavailable
-- [ ] Verify native Peek behavior with related diagnostics (note in DECISIONS_LOG)
+- [x] HoverProvider with escaped content
+- [x] Step N of M, trace list, current emphasis
+- [x] Trusted command links for step jumps
+- [x] Previous / Next trace step commands (+ optional keybindings)
+- [x] Multiple findings at location: disambiguation before prev/next
+- [x] Fallback markdown list if timeline styling unavailable
+- [x] Verify native Peek behavior with related diagnostics (note in DECISIONS_LOG)
 
 ---
 
