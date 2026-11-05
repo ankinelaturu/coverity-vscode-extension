@@ -4,7 +4,8 @@ const vscode = require('vscode');
 const { ROW_HEIGHT } = require('./gutterLaneSvg');
 
 function codeLensBandPx() {
-  return Math.max(0, vscode.workspace.getConfiguration('coverity').get('traceStripCodeLensBandPx', 0));
+  const configured = vscode.workspace.getConfiguration('coverity').get('traceStripCodeLensBandPx', 0);
+  return Math.max(0, configured);
 }
 
 /**
@@ -44,13 +45,13 @@ function estimateCodeLensRowsPerLine(session, document) {
   return counts;
 }
 
-/** Uniform row height avoids mismatched strip tiles; optional bridge when band px > 0. */
-function stripLineLayout(line, lineCount, codeLensRows) {
-  const band = codeLensBandPx();
-  const bridgeDown = band > 0 && line + 1 < lineCount ? codeLensRows.get(line + 1) || 0 : 0;
-  const heightPx = ROW_HEIGHT + bridgeDown * band;
+/** Fixed row height — taller per-line fills show as extra rectangles in Cursor (see DEC-011). */
+function stripLineLayout(_line, _lineCount, _codeLensRows) {
+  void _line;
+  void _lineCount;
+  void _codeLensRows;
   return {
-    heightPx: `${heightPx}px`,
+    heightPx: `${ROW_HEIGHT}px`,
     margin: '0',
   };
 }

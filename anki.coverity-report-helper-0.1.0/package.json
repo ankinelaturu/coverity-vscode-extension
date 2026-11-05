@@ -196,7 +196,7 @@
           "default": 0,
           "minimum": 0,
           "maximum": 48,
-          "description": "Extra COV strip height (px) below a line when the next line has Coverity CodeLens, to reduce gaps. CodeLens layout is unchanged."
+          "description": "Reserved. Per-line strip extension for CodeLens gaps is disabled (causes extra filled rectangles in Cursor). CodeLens layout is unchanged."
         },
         "coverity.rerun.enabled": {
           "type": "boolean",
