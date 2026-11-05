@@ -12,7 +12,13 @@ const vscode = require('vscode');
  * @returns {vscode.Uri}
  */
 function gutterIconUriForSvg(context, svg) {
-  const dir = path.join(context.globalStorageUri.fsPath, 'gutter-icons');
+  let baseDir = context.globalStorageUri.fsPath;
+  try {
+    fs.mkdirSync(baseDir, { recursive: true });
+  } catch {
+    baseDir = context.extensionUri.fsPath;
+  }
+  const dir = path.join(baseDir, 'gutter-icons');
   fs.mkdirSync(dir, { recursive: true });
   const hash = crypto.createHash('sha1').update(svg).digest('hex');
   const filePath = path.join(dir, `${hash}.svg`);

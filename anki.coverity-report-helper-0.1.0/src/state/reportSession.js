@@ -302,6 +302,38 @@ class ReportSession {
     return this.getEventsForUri(uri).filter(({ tracked }) => tracked.range.start.line === line);
   }
 
+  /**
+   * Pick an active finding/step when this file has trace hits but none is selected yet.
+   * @param {vscode.Uri} uri
+   */
+  ensureActiveFindingForUri(uri) {
+    if (!this.indexes) {
+      return;
+    }
+    const hits = this.getEventsForUri(uri);
+    if (hits.length === 0) {
+      return;
+    }
+    if (this.activeFindingId) {
+      const still = hits.some((h) => h.finding.id === this.activeFindingId);
+      if (still) {
+        return;
+      }
+    }
+    const editor = vscode.window.activeTextEditor;
+    if (editor?.document.uri.toString() === uri.toString()) {
+      const pos = editor.selection.active;
+      const onCursor = hits.filter(({ tracked }) => tracked.range.contains(pos));
+      if (onCursor.length) {
+        const pick = onCursor[0];
+        this.setActive(pick.finding.id, pick.eventIndex);
+        return;
+      }
+    }
+    const first = hits[0];
+    this.setActive(first.finding.id, first.eventIndex);
+  }
+
   /** Diagnostics grouped by document URI string */
   collectDiagnostics() {
     /** @type {Map<string, vscode.Diagnostic[]>} */

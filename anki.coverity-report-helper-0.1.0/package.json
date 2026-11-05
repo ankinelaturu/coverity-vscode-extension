@@ -171,8 +171,8 @@
         },
         "coverity.experimentalTraceLanes": {
           "type": "boolean",
-          "default": false,
-          "description": "Show fixed-width multi-lane trace graph in the gutter for the active finding (SVG gutter icons)."
+          "default": true,
+          "description": "Show fixed-width multi-lane trace graph in the gutter for the active finding (SVG gutter icons). When false, use compact numbered gutter badges instead."
         },
         "coverity.traceGutterLaneCount": {
           "type": "number",

@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { buildGutterLaneRowSvg, assignTraceLanes } = require('./gutterLaneSvg');
 const { gutterIconUriForSvg } = require('./gutterIconCache');
+const { lineDecorationRange } = require('./editorLineRange');
 
 /**
  * Build per-line gutter decorations for the active finding (multi-lane fixed width).
@@ -15,6 +16,8 @@ function buildTraceLaneGutterDecorations(session, editor, context) {
   const cfg = vscode.workspace.getConfiguration('coverity');
   const laneCount = Math.max(1, Math.min(12, cfg.get('traceGutterLaneCount', 8)));
   const laneWidth = Math.max(6, Math.min(16, cfg.get('traceGutterLaneWidth', 8)));
+
+  session.ensureActiveFindingForUri(editor.document.uri);
 
   const findingId = session.activeFindingId;
   if (!findingId) {
@@ -48,7 +51,7 @@ function buildTraceLaneGutterDecorations(session, editor, context) {
 
   function pushRow(line, svgOpts) {
     const svg = buildGutterLaneRowSvg({ laneCount, laneWidth, ...svgOpts });
-    const range = new vscode.Range(line, 0, line, 0);
+    const range = lineDecorationRange(editor.document, line);
     decorations.push({
       range,
       renderOptions: {

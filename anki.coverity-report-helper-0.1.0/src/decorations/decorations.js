@@ -2,9 +2,10 @@
 
 const vscode = require('vscode');
 const { buildTraceLaneGutterDecorations } = require('./gutterLaneDecorations');
+const { buildSimpleGutterBadgeDecorations } = require('./gutterBadgeDecorations');
 
 /**
- * Overview ruler + optional trace gutter (multi-lane SVG icons or simple badges).
+ * Overview ruler + trace gutter (multi-lane or simple step icons).
  */
 class DecorationManager {
   /**
@@ -24,14 +25,12 @@ class DecorationManager {
       overviewRulerColor: new vscode.ThemeColor('editorInfo.foreground'),
       overviewRulerLane: vscode.OverviewRulerLane.Center,
     });
-    this.badge = vscode.window.createTextEditorDecorationType({
-      before: { contentText: '●', margin: '0 0 0 1em', color: new vscode.ThemeColor('charts.yellow') },
-    });
-    this.traceLaneGutter = vscode.window.createTextEditorDecorationType({
+    this.traceGutter = vscode.window.createTextEditorDecorationType({
       gutterIconSize: 'contain',
     });
     session.onDidChange(() => this.update());
     vscode.window.onDidChangeActiveTextEditor(() => this.update());
+    vscode.window.onDidChangeTextEditorSelection(() => this.update());
   }
 
   update() {
@@ -40,12 +39,13 @@ class DecorationManager {
       return;
     }
     const cfg = vscode.workspace.getConfiguration('coverity');
-    const lanesEnabled = cfg.get('experimentalTraceLanes', false);
+    const lanesEnabled = cfg.get('experimentalTraceLanes', true);
     const badgesEnabled = cfg.get('traceBadgesEnabled', true);
     const active = [];
     const other = [];
-    const badgeMarks = [];
-    const laneMarks = [];
+    const gutterMarks = [];
+
+    this.session.ensureActiveFindingForUri(editor.document.uri);
 
     for (const finding of this.session.indexes.findings) {
       for (let ei = 0; ei < finding.events.length; ei++) {
@@ -60,32 +60,27 @@ class DecorationManager {
           } else {
             other.push(t.range);
           }
-          if (badgesEnabled && !lanesEnabled) {
-            badgeMarks.push({ range: t.range, renderOptions: { before: { contentText: `${ei + 1}` } } });
-          }
         }
       }
     }
 
-    if (lanesEnabled) {
-      laneMarks.push(...buildTraceLaneGutterDecorations(this.session, editor, this.context));
+    if (badgesEnabled) {
+      if (lanesEnabled) {
+        gutterMarks.push(...buildTraceLaneGutterDecorations(this.session, editor, this.context));
+      } else {
+        gutterMarks.push(...buildSimpleGutterBadgeDecorations(this.session, editor, this.context));
+      }
     }
 
     editor.setDecorations(this.activeStep, active);
     editor.setDecorations(this.otherStep, other);
-    editor.setDecorations(this.traceLaneGutter, laneMarks);
-    if (badgesEnabled && !lanesEnabled && badgeMarks.length) {
-      editor.setDecorations(this.badge, badgeMarks);
-    } else {
-      editor.setDecorations(this.badge, []);
-    }
+    editor.setDecorations(this.traceGutter, gutterMarks);
   }
 
   dispose() {
     this.activeStep.dispose();
     this.otherStep.dispose();
-    this.badge.dispose();
-    this.traceLaneGutter.dispose();
+    this.traceGutter.dispose();
   }
 }
 

@@ -47,7 +47,7 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Extension icon** — `media/duck.svg` (Extensions list only; **not** in the file tree)
 - **Problems** — filter by source `Coverity Report`
 - **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
-- **Trace gutter (optional)** — set `coverity.experimentalTraceLanes` to **true** for a **fixed-width** multi-lane graph in the gutter (active finding only). Tune `coverity.traceGutterLaneCount` (default **8**) and `coverity.traceGutterLaneWidth` (default **8** px → **64** px total). Click a step or use trace navigation to set the active finding first.
+- **Trace gutter** — with `coverity.traceBadgesEnabled` (default **on**), step markers appear in the **line number gutter** (SVG icons). Multi-lane graph: `coverity.experimentalTraceLanes` (default **on**); set **false** for compact numbered circles only. Ensure the editor gutter is visible (**View → Appearance → Show Gutter**). Active finding is picked automatically for the open file.
 
 **Diagnostic severity:** the **last trace step** (main occurrence) is published as **Warning**; earlier steps are **Information** (context only). Source is always `Coverity Report`. Overview ruler highlights active vs other steps of the same finding when trace badges are enabled.
 
