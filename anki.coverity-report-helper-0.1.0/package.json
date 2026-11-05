@@ -112,7 +112,10 @@
       {
         "command": "coverity.pickProblemsTypeFilter",
         "title": "Filter Coverity by Finding Type",
-        "icon": "$(filter)",
+        "icon": {
+          "light": "media/duck.svg",
+          "dark": "media/duck.svg"
+        },
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       }
