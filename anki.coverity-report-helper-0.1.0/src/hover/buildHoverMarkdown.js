@@ -5,6 +5,7 @@ const { describe } = require('../lookup/lookup');
 const { traceStepCellDataUri, TRACE_ROW_HEIGHT, TRACE_COL_WIDTH } = require('./traceTimelineSvg');
 const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPillSvg');
 const { cycleHoverFindingCommandUri } = require('./hoverFindingCarousel');
+const { fullTraceCommandUri } = require('../tracePeek/tracePeekPanel');
 
 const TRACE_SECTION_LABEL = 'Trace Steps';
 
@@ -133,6 +134,10 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
       ? vscode.workspace.getConfiguration('coverity').get('hoverRichTimeline', true)
       : true);
   md.supportHtml = useRichTimeline;
+
+  md.appendMarkdown(
+    `**[▶ Full Trace](${fullTraceCommandUri(finding.id, eventIndex)})** — all steps with code (±2 lines)\n\n`
+  );
 
   appendFindingCarouselHeader(md, findingCarousel);
 

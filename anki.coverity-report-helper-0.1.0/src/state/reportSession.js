@@ -423,7 +423,8 @@ class ReportSession {
       const isMain = ei === finding.events.length - 1;
       const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
       const hint = describe(finding.checkerId, ev.label);
-      const msg = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
+      const core = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
+      const msg = `${core} — CodeLens/Hover: Full Trace`;
       const severity = isMain ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information;
       const diag = new vscode.Diagnostic(tracked.range, msg, severity);
       diag.source = DIAGNOSTIC_SOURCE;
@@ -506,7 +507,7 @@ function mergeDiagnosticsOnSameLine(diags) {
       range = range.union(group[i].range);
       severity = Math.min(severity, group[i].severity);
     }
-    const msg = `${group.length} Coverity findings on this line — open Coverity hover and use Finding ← →`;
+    const msg = `${group.length} Coverity findings on this line — use Quick Fix: Full Trace`;
     const merged = new vscode.Diagnostic(range, msg, severity);
     merged.source = DIAGNOSTIC_SOURCE;
     out.push(merged);

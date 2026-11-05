@@ -49,7 +49,7 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
 - **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, step markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
 
-**Trace peek** — Native Problems peek stays a one-line diagnostic message. For the full trace, run **Coverity: View Coverity Trace Peek** (Command Palette) or the **Coverity: View full trace peek** code action on a squiggle. Opens a side panel with every trace step in order, ±2 lines of context, and the current step highlighted.
+**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens a side panel with every trace step in order, ±2 lines of context, and the current step highlighted.
 
 **Diagnostic severity:** the **last trace step** (main occurrence) is published as **Warning**; earlier steps are **Information** (context only). Source is always `Coverity Report`. Overview ruler highlights active vs other steps of the same finding when trace badges are enabled.
 

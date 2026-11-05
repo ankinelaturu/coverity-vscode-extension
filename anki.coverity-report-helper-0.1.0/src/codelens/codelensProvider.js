@@ -24,6 +24,15 @@ function registerCodeLens(session) {
       const lenses = [];
       for (const [line, list] of byLine.entries()) {
         const range = new vscode.Range(line, 0, line, 0);
+        const peekFinding = list[0].finding;
+        const peekStep = list[0].eventIndex;
+        lenses.push(
+          new vscode.CodeLens(range, {
+            command: 'coverity.showTracePeek',
+            title: 'Full Trace',
+            arguments: [peekFinding.id, peekStep],
+          })
+        );
         if (list.length > 1) {
           lenses.push(
             new vscode.CodeLens(range, {

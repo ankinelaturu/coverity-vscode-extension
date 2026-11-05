@@ -104,13 +104,20 @@
       },
       {
         "command": "coverity.showTracePeek",
-        "title": "View Coverity Trace Peek",
+        "title": "Full Trace",
         "icon": "$(list-flat)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       }
     ],
     "menus": {
+      "editor/context": [
+        {
+          "command": "coverity.showTracePeek",
+          "when": "coverity.hasReport && (editorLangId == c || editorLangId == cpp)",
+          "group": "navigation@50"
+        }
+      ],
       "commandPalette": [
         { "command": "coverity.loadReport" },
         { "command": "coverity.reloadReport", "when": "coverity.hasReport" },
