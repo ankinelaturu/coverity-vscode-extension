@@ -20,6 +20,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-008 | No Coverity sidebar; Explorer decorations + Problems + editor | Accepted | 2026-11-05 |
 | DEC-009 | Native Peek uses VS Code diagnostics; hover is separate Markdown | Accepted | 2026-11-05 |
 | DEC-010 | Milestone scope: skip M-final, compare, M6, M7, M14 | Accepted | 2026-11-05 |
+| DEC-011 | Cursor: trace strip in line-decorations column, not glyph margin | Accepted | 2026-11-05 |
+
+---
+
+## DEC-011 — Trace margin vs glyph gutter in Cursor
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** `gutterIconPath` (breakpoint / glyph margin) is not honored for this extension in Cursor; editor background decorations work. Draw the trace timeline in the **line-decorations** column using one fixed-width `before.contentIconPath` SVG per line: empty lane grid on every line in the file; step nodes and spines only on active-finding trace lines. Widen `editor.lineDecorationsWidth` (default contribution 72px).
 
 ---
 

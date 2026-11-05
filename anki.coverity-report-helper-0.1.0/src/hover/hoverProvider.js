@@ -13,14 +13,12 @@ function resolveHoverContext(session, hits) {
   }
   if (hits.length === 1) {
     const { finding, eventIndex } = hits[0];
-    session.setActive(finding.id, eventIndex);
     return { finding, eventIndex, allowStepNav: true, ambiguousHits: null };
   }
 
   const activeId = session.activeFindingId;
   const activeHit = hits.find((h) => h.finding.id === activeId);
   if (activeHit) {
-    session.setActive(activeHit.finding.id, activeHit.eventIndex);
     return {
       finding: activeHit.finding,
       eventIndex: activeHit.eventIndex,

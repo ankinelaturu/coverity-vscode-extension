@@ -7,7 +7,7 @@ const vscode = require('vscode');
 /**
  * VS Code gutter icons: prefer bundled PNG under extension media/ (SVG often not rendered).
  * @param {vscode.ExtensionContext} context
- * @param {string} fileName e.g. gutter-probe.png
+ * @param {string} fileName e.g. trace-margin-lanes.png
  */
 function bundledGutterIcon(context, fileName) {
   const filePath = path.join(context.extensionUri.fsPath, 'media', fileName);

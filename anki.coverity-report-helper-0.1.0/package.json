@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -13,6 +13,9 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
+    "configurationDefaults": {
+      "editor.lineDecorationsWidth": "72px"
+    },
     "commands": [
       {
         "command": "coverity.loadReport",
@@ -40,12 +43,6 @@
         "icon": "$(output)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
-      },
-      {
-        "command": "coverity.debugGutter",
-        "title": "Debug Gutter Icons",
-        "icon": "$(debug)",
-        "category": "Coverity"
       },
       {
         "command": "coverity.rerunCoverity",
@@ -106,7 +103,6 @@
     "menus": {
       "commandPalette": [
         { "command": "coverity.loadReport" },
-        { "command": "coverity.debugGutter" },
         { "command": "coverity.reloadReport", "when": "coverity.hasReport" },
         { "command": "coverity.showProblems", "when": "coverity.hasReport" },
         { "command": "coverity.showParseOutput", "when": "coverity.hasReport" },
@@ -155,11 +151,6 @@
           "type": "boolean",
           "default": true
         },
-        "coverity.gutterDebugProbe": {
-          "type": "boolean",
-          "default": true,
-          "description": "Debug: always draw COV/duck gutter icons on line 1 and the cursor line in C/C++ files (no report required). Set false after verifying the gutter works."
-        },
         "coverity.explorerDecorationsEnabled": {
           "type": "boolean",
           "default": true,
@@ -184,7 +175,7 @@
         "coverity.experimentalTraceLanes": {
           "type": "boolean",
           "default": true,
-          "description": "Show fixed-width multi-lane trace graph in the gutter for the active finding (SVG gutter icons). When false, use compact numbered gutter badges instead."
+          "description": "Reserve a fixed-width COV strip between line numbers and code for the whole file; draw multi-lane trace graph and step nodes only on active-finding trace lines."
         },
         "coverity.traceGutterLaneCount": {
           "type": "number",
@@ -199,6 +190,13 @@
           "minimum": 6,
           "maximum": 16,
           "description": "Pixel width of each lane column in the trace gutter (default 8×8 = 64px)."
+        },
+        "coverity.traceStripCodeLensBandPx": {
+          "type": "number",
+          "default": 18,
+          "minimum": 0,
+          "maximum": 48,
+          "description": "Extra COV strip height (px) below a line when the next line has Coverity CodeLens, to reduce gaps. CodeLens layout is unchanged."
         },
         "coverity.rerun.enabled": {
           "type": "boolean",
