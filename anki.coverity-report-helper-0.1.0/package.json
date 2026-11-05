@@ -1,9 +1,9 @@
 {
-  "name": "coverity-vscode-extension",
+  "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports and navigate findings in C/C++ sources.",
   "version": "0.1.0",
-  "publisher": "local",
+  "publisher": "anki",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"

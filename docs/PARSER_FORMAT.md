@@ -3,7 +3,7 @@
 **Status:** Synthetic sample aligned to [cov-format-errors multiline](https://docs.blackduck.com/r/coverity/2026.3/coverity-documentation/cov-format-errors.html) / `--emacs-style` (see also [Reviewing defects](https://docs.blackduck.com/r/coverity/2026.9/coverity-documentation/reviewing-defects.html)). Not yet verified against the user’s production export.
 
 **Fixture:** `my-repo/deploy/coverity/coverity-report.txt`  
-**Implementation home (planned):** `src/parser/textReportParser.js`  
+**Implementation home:** `anki.coverity-report-helper-0.1.0/src/parser/textReportParser.js`  
 **Related:** [DESIGN.md](./DESIGN.md) §6, [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md)
 
 ---
@@ -125,7 +125,7 @@ Earlier synthetic format (location + event only, no `Type:`) may still appear in
 
 ## 8. How to change the grammar
 
-1. Edit parser module (planned `src/parser/textReportParser.js`).
+1. Edit parser module (`anki.coverity-report-helper-0.1.0/src/parser/textReportParser.js`).
 2. Update `my-repo/deploy/coverity/coverity-report.txt` and this doc.
 3. Note changes in [NOTES.md](./NOTES.md) / [DECISIONS_LOG.md](./DECISIONS_LOG.md).
 

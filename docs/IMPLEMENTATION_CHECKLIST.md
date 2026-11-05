@@ -11,7 +11,7 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 - [x] Requirements captured in `CURSOR_COVERITY_EXTENSION_PROMPT.md`
 - [x] Design doc, checklist, parser guide, acceptance, notes infrastructure
 - [x] Root `README.md` (project overview + pointer to docs)
-- [x] Choose extension id (`coverity-vscode-extension`) — see DEC-005
+- [x] Extension id `anki.coverity-report-helper` in `anki.coverity-report-helper-0.1.0/` — DEC-007
 
 ---
 

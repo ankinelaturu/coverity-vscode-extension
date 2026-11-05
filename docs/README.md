@@ -42,4 +42,4 @@ Use these consistently in docs and UI copy:
 
 ## Related repo paths (planned)
 
-When implementation starts, code should align with module names in `DESIGN.md` (e.g. `src/parser/textReportParser.ts`). Until then, paths in design docs are **targets**, not facts about the tree.
+Extension source lives under `anki.coverity-report-helper-0.1.0/src/` (see `DESIGN.md` module names).

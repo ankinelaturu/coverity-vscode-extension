@@ -76,7 +76,7 @@ Items here block **claims** (e.g. “parser verified”, “lanes supported”),
 
 | ID | Question | Impact |
 |----|----------|--------|
-| OQ-060 | Publisher id and public name (`local.coverity-report-helper` vs other)? | Folder name, `package.json` |
+| OQ-060 | ~~Publisher id~~ → **`anki.coverity-report-helper`** (DEC-007); folder rename to `anki.coverity-report-helper-0.1.0` when ready | Cursor discovery |
 
 ---
 

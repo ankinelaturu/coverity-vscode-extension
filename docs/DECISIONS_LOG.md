@@ -16,6 +16,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-004 | Synthetic report uses cov-format-errors multiline grammar | Accepted | 2026-11-04 |
 | DEC-005 | JavaScript-only extension folder (no npm on target) | Accepted | 2026-11-04 |
 | DEC-006 | Gutter trace lanes deferred; badges + overview ruler only | Accepted | 2026-11-05 |
+| DEC-007 | Extension id `anki.coverity-report-helper`; folder rename deferred | Accepted | 2026-11-05 |
+
+---
+
+## DEC-007 — Publisher and extension name
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** `package.json` uses `"publisher": "anki"` and `"name": "coverity-report-helper"`. Installable files live in `anki.coverity-report-helper-0.1.0/`; symlink/copy that folder to `~/.cursor/extensions/anki.coverity-report-helper-0.1.0`. Git repo root stays `coverity-vscode-extension`.
 
 ---
 
