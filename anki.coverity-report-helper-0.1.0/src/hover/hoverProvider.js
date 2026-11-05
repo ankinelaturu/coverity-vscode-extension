@@ -2,33 +2,43 @@
 
 const vscode = require('vscode');
 const { buildCoverityHoverMarkdown } = require('./buildHoverMarkdown');
+const { sortFindingsAtLine } = require('./hoverFindingCarousel');
 
 /**
- * Resolve which finding/step to show when one or more tracked ranges cover the cursor.
- * @returns {{ finding: object, eventIndex: number, allowStepNav: boolean, ambiguousHits: object[] | null }}
+ * @returns {{ finding: object, eventIndex: number, findingCarousel: { index: number, total: number } | null }}
  */
-function resolveHoverContext(session, hits) {
-  if (hits.length === 0) {
+function resolveHoverContext(session, document, position) {
+  const atCursor = session.getEventsForUri(document.uri).filter(({ tracked }) =>
+    tracked.range.contains(position)
+  );
+  if (atCursor.length === 0) {
     return null;
   }
-  if (hits.length === 1) {
-    const { finding, eventIndex } = hits[0];
-    return { finding, eventIndex, allowStepNav: true, ambiguousHits: null };
+
+  const choices = sortFindingsAtLine(session, document, position);
+  if (choices.length === 0) {
+    return null;
   }
 
-  const activeId = session.activeFindingId;
-  const activeHit = hits.find((h) => h.finding.id === activeId);
-  if (activeHit) {
-    return {
-      finding: activeHit.finding,
-      eventIndex: activeHit.eventIndex,
-      allowStepNav: true,
-      ambiguousHits: hits,
-    };
+  if (choices.length === 1) {
+    const { finding, eventIndex } = choices[0];
+    return { finding, eventIndex, findingCarousel: null };
   }
 
-  const { finding, eventIndex } = hits[0];
-  return { finding, eventIndex, allowStepNav: false, ambiguousHits: hits };
+  session.syncHoverFindingCarousel(document.uri.toString(), position.line, choices);
+  const pos = session.getHoverFindingCarouselPosition();
+  const sel = session.getHoverFindingCarouselSelection();
+  const pick = sel
+    ? choices.find((c) => c.finding.id === sel.findingId && c.eventIndex === sel.eventIndex) ||
+      choices.find((c) => c.finding.id === sel.findingId) ||
+      choices[0]
+    : choices[0];
+
+  return {
+    finding: pick.finding,
+    eventIndex: pick.eventIndex,
+    findingCarousel: pos,
+  };
 }
 
 function registerHoverProvider(session) {
@@ -37,17 +47,12 @@ function registerHoverProvider(session) {
       if (!session.hasReport()) {
         return null;
       }
-      const hits = session.getEventsForUri(document.uri).filter(({ tracked }) =>
-        tracked.range.contains(position)
-      );
-      const ctx = resolveHoverContext(session, hits);
+      const ctx = resolveHoverContext(session, document, position);
       if (!ctx) {
         return null;
       }
       const md = buildCoverityHoverMarkdown(ctx.finding, ctx.eventIndex, {
-        allowStepNav: ctx.allowStepNav,
-        ambiguousHits: ctx.ambiguousHits,
-        activeFindingId: session.activeFindingId,
+        findingCarousel: ctx.findingCarousel,
       });
       return new vscode.Hover(md);
     },

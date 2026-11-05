@@ -34,6 +34,8 @@ class ReportSession {
     this.activeEditorUri = null;
     /** @type {object | null} */
     this.explorerDecorationIndex = null;
+    /** @type {{ key: string, entries: { findingId: string, eventIndex: number }[], index: number } | null} */
+    this._hoverFindingCarousel = null;
   }
 
   hasReport() {
@@ -181,6 +183,59 @@ class ReportSession {
     this.activeFindingId = findingId;
     this.activeEventIndex = eventIndex;
     this.fireChange();
+  }
+
+  /**
+   * @param {string} uriStr
+   * @param {number} line
+   * @param {{ finding: object, eventIndex: number }[]} sortedChoices
+   */
+  syncHoverFindingCarousel(uriStr, line, sortedChoices) {
+    const entries = sortedChoices.map(({ finding, eventIndex }) => ({
+      findingId: finding.id,
+      eventIndex,
+    }));
+    const signature = entries.map((e) => `${e.findingId}:${e.eventIndex}`).join('|');
+    const key = `${uriStr}:${line}:${signature}`;
+    if (this._hoverFindingCarousel?.key !== key) {
+      this._hoverFindingCarousel = { key, entries, index: 0 };
+    }
+    const activeIdx = entries.findIndex((e) => e.findingId === this.activeFindingId);
+    if (activeIdx >= 0) {
+      this._hoverFindingCarousel.index = activeIdx;
+    }
+  }
+
+  /** @returns {{ index: number, total: number } | null} */
+  getHoverFindingCarouselPosition() {
+    const car = this._hoverFindingCarousel;
+    if (!car || car.entries.length <= 1) {
+      return null;
+    }
+    return { index: car.index, total: car.entries.length };
+  }
+
+  /**
+   * @returns {{ findingId: string, eventIndex: number } | null}
+   */
+  getHoverFindingCarouselSelection() {
+    const car = this._hoverFindingCarousel;
+    if (!car || car.entries.length === 0) {
+      return null;
+    }
+    return car.entries[car.index];
+  }
+
+  cycleHoverFinding(delta) {
+    const car = this._hoverFindingCarousel;
+    if (!car || car.entries.length <= 1) {
+      return false;
+    }
+    const n = car.entries.length;
+    car.index = ((car.index + delta) % n + n) % n;
+    const pick = car.entries[car.index];
+    this.setActive(pick.findingId, pick.eventIndex);
+    return true;
   }
 
   /**
@@ -341,30 +396,45 @@ class ReportSession {
     if (!this.indexes) {
       return map;
     }
+    /** @type {Map<string, { ei: number, finding: object, ev: object, tracked: object }>} */
+    const bestOnLine = new Map();
+
     for (const finding of this.indexes.findings) {
-      const isMain = (ei) => ei === finding.events.length - 1;
       for (let ei = 0; ei < finding.events.length; ei++) {
         const ev = finding.events[ei];
         const tracked = this.getTracked(finding.id, ei);
         if (!tracked?.uri || !tracked.range) {
           continue;
         }
-        const key = tracked.uri.toString();
-        if (!map.has(key)) {
-          map.set(key, []);
+        const line = tracked.range.start.line;
+        const slotKey = `${tracked.uri.toString()}\0${line}\0${finding.id}`;
+        const prev = bestOnLine.get(slotKey);
+        if (!prev || ei > prev.ei) {
+          bestOnLine.set(slotKey, { ei, finding, ev, tracked });
         }
-        const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
-        const hint = describe(finding.checkerId, ev.label);
-        const msg = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
-        const severity = isMain(ei)
-          ? vscode.DiagnosticSeverity.Warning
-          : vscode.DiagnosticSeverity.Information;
-        const diag = new vscode.Diagnostic(tracked.range, msg, severity);
-        diag.source = DIAGNOSTIC_SOURCE;
-        diag.code = finding.checkerId || undefined;
-        map.get(key).push(diag);
       }
     }
+
+    for (const { ei, finding, ev, tracked } of bestOnLine.values()) {
+      const key = tracked.uri.toString();
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      const isMain = ei === finding.events.length - 1;
+      const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
+      const hint = describe(finding.checkerId, ev.label);
+      const msg = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
+      const severity = isMain ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information;
+      const diag = new vscode.Diagnostic(tracked.range, msg, severity);
+      diag.source = DIAGNOSTIC_SOURCE;
+      diag.code = finding.checkerId || undefined;
+      map.get(key).push(diag);
+    }
+
+    for (const [uriStr, list] of map.entries()) {
+      map.set(uriStr, mergeDiagnosticsOnSameLine(list));
+    }
+
     return map;
   }
 
@@ -407,6 +477,41 @@ class ReportSession {
 
 function trackKey(findingId, eventIndex) {
   return `${findingId}:${eventIndex}`;
+}
+
+/** One squiggle/hover block per line when several findings share it (extension hover cycles findings). */
+function mergeDiagnosticsOnSameLine(diags) {
+  if (diags.length <= 1) {
+    return diags;
+  }
+  /** @type {Map<number, vscode.Diagnostic[]>} */
+  const byLine = new Map();
+  for (const d of diags) {
+    const line = d.range.start.line;
+    if (!byLine.has(line)) {
+      byLine.set(line, []);
+    }
+    byLine.get(line).push(d);
+  }
+  /** @type {vscode.Diagnostic[]} */
+  const out = [];
+  for (const group of byLine.values()) {
+    if (group.length === 1) {
+      out.push(group[0]);
+      continue;
+    }
+    let range = group[0].range;
+    let severity = group[0].severity;
+    for (let i = 1; i < group.length; i++) {
+      range = range.union(group[i].range);
+      severity = Math.min(severity, group[i].severity);
+    }
+    const msg = `${group.length} Coverity findings on this line — open Coverity hover and use Finding ← →`;
+    const merged = new vscode.Diagnostic(range, msg, severity);
+    merged.source = DIAGNOSTIC_SOURCE;
+    out.push(merged);
+  }
+  return out;
 }
 
 function hashContent(text) {

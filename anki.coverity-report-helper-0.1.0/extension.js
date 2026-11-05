@@ -78,6 +78,16 @@ function registerCommands(context, session) {
   );
   reg('coverity.previousTraceStep', () => session.navigateRelative(-1));
   reg('coverity.nextTraceStep', () => session.navigateRelative(1));
+  reg('coverity.cycleHoverFinding', async (arg) => {
+    const delta = Array.isArray(arg) ? Number(arg[0]) : Number(arg);
+    if (!Number.isFinite(delta) || delta === 0) {
+      return;
+    }
+    if (!session.cycleHoverFinding(delta)) {
+      return;
+    }
+    await vscode.commands.executeCommand('editor.action.showHover');
+  });
   reg('coverity.chooseFindingsAtLine', async (uriStr, line) => {
     const uri = typeof uriStr === 'string' ? vscode.Uri.parse(uriStr) : uriStr;
     const hits = session.getEventsOnLine(uri, line);

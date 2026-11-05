@@ -4,6 +4,7 @@ const vscode = require('vscode');
 const { describe } = require('../lookup/lookup');
 const { traceStepCellDataUri, TRACE_ROW_HEIGHT, TRACE_COL_WIDTH } = require('./traceTimelineSvg');
 const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPillSvg');
+const { cycleHoverFindingCommandUri } = require('./hoverFindingCarousel');
 
 const TRACE_SECTION_LABEL = 'Trace Steps';
 
@@ -23,11 +24,20 @@ function navigateStepUri(findingId, eventIndex) {
   return `command:coverity.navigateToStep?${encodeURIComponent(JSON.stringify([findingId, eventIndex]))}`;
 }
 
-function setActiveStepUri(findingId, eventIndex) {
-  return `command:coverity.setActiveFindingStep?${encodeURIComponent(JSON.stringify([findingId, eventIndex]))}`;
-}
-
 const ROW = TRACE_ROW_HEIGHT;
+
+function appendFindingCarouselHeader(md, carousel) {
+  if (!carousel || carousel.total <= 1) {
+    return;
+  }
+  const { index, total } = carousel;
+  const prev = `[←](${cycleHoverFindingCommandUri(-1)})`;
+  const next = `[→](${cycleHoverFindingCommandUri(1)})`;
+  md.appendMarkdown(
+    `${prev} **Finding ${index + 1} of ${total} at this line** ${next}\n\n` +
+      `_Trace step prev/next: CodeLens above the line._\n\n`
+  );
+}
 
 function timelineCellHtml(stepIndex, activeIndex) {
   const dataUri = traceStepCellDataUri(stepIndex, activeIndex);
@@ -98,40 +108,6 @@ function appendTraceMarkdownList(md, finding, eventIndex) {
   md.appendMarkdown('\n');
 }
 
-function appendDisambiguationSection(md, hits, activeFindingId) {
-  if (!hits || hits.length <= 1) {
-    return;
-  }
-  md.appendMarkdown(`**Multiple findings at this location** — choose one for Previous/Next:\n\n`);
-  for (const { finding, eventIndex } of hits) {
-    const checker = finding.checkerId || 'Unknown';
-    const title = finding.typeTitle || checker;
-    const stepTotal = finding.events.length;
-    const marker = finding.id === activeFindingId ? '**→ ' : '';
-    const suffix = finding.id === activeFindingId ? ' (active)**' : '';
-    const label = `${marker}${escapeMd(title)} (${escapeMd(checker)}) · step ${eventIndex + 1} of ${stepTotal}${suffix}`;
-    md.appendMarkdown(`- [${label}](${setActiveStepUri(finding.id, eventIndex)})\n`);
-  }
-  md.appendMarkdown('\n');
-}
-
-function appendStepNavLinks(md, finding, eventIndex, allowStepNav) {
-  if (!allowStepNav) {
-    md.appendMarkdown('_Select a finding above before using Previous/Next._\n');
-    return;
-  }
-  const navLinks = [];
-  if (eventIndex > 0) {
-    navLinks.push(`[← Previous step](command:coverity.previousTraceStep)`);
-  }
-  if (eventIndex < finding.events.length - 1) {
-    navLinks.push(`[Next step →](command:coverity.nextTraceStep)`);
-  }
-  if (navLinks.length) {
-    md.appendMarkdown(`${navLinks.join(' · ')}\n`);
-  }
-}
-
 function friendlyBlurb(finding, ev) {
   const fromLookup = describe(finding.checkerId, ev.label);
   if (fromLookup) {
@@ -143,15 +119,10 @@ function friendlyBlurb(finding, ev) {
 /**
  * @param {object} finding
  * @param {number} eventIndex
- * @param {{ allowStepNav?: boolean, ambiguousHits?: object[] | null, activeFindingId?: string | null }} [options]
+ * @param {{ findingCarousel?: { index: number, total: number } | null }} [options]
  */
 function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
-  const {
-    allowStepNav = true,
-    ambiguousHits = null,
-    activeFindingId = null,
-    useRichTimeline: useRichTimelineOpt,
-  } = options;
+  const { findingCarousel = null, useRichTimeline: useRichTimelineOpt } = options;
   const ev = finding.events[eventIndex];
   const md = new vscode.MarkdownString();
   md.isTrusted = true;
@@ -163,11 +134,13 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
       : true);
   md.supportHtml = useRichTimeline;
 
+  appendFindingCarouselHeader(md, findingCarousel);
+
   const checker = finding.checkerId || 'Unknown';
   const title = finding.typeTitle || checker;
   const stepTotal = finding.events.length;
   md.appendMarkdown(`**${escapeMd(title)}** (\`${escapeMd(checker)}\`)\n\n`);
-  md.appendMarkdown(`**Step ${eventIndex + 1} of ${stepTotal}**\n\n`);
+  md.appendMarkdown(`**Trace step ${eventIndex + 1} of ${stepTotal}**\n\n`);
 
   const blurb = friendlyBlurb(finding, ev);
   if (blurb) {
@@ -181,10 +154,6 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
     }
   }
 
-  if (ambiguousHits && ambiguousHits.length > 1) {
-    appendDisambiguationSection(md, ambiguousHits, activeFindingId);
-  }
-
   if (ev.rawPayload) {
     md.appendMarkdown('```\n' + ev.rawPayload + '\n```\n\n');
   }
@@ -194,9 +163,6 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
   } else {
     appendTraceMarkdownList(md, finding, eventIndex);
   }
-
-  md.appendMarkdown('\n');
-  appendStepNavLinks(md, finding, eventIndex, allowStepNav);
 
   return md;
 }

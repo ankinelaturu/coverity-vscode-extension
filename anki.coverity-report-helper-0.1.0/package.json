@@ -95,6 +95,12 @@
         "icon": "$(arrow-down)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.cycleHoverFinding",
+        "title": "Cycle Coverity Finding in Hover",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
       }
     ],
     "menus": {
