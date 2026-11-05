@@ -5,8 +5,6 @@ const { gutterWidth } = require('./gutterLaneSvg');
 const { lineDecorationRange } = require('./editorLineRange');
 const { stripLineLayout } = require('./codeLensLayout');
 
-const STRIP_TINT = 'rgba(72, 82, 102, 0.28)';
-
 /**
  * One `before` per line (dual decoration types stacked horizontally and hid step labels in Cursor).
  */
@@ -16,7 +14,7 @@ function beforeStripCell(widthPx, layout, contentText, textStyle) {
     width: `${widthPx}px`,
     height: layout.heightPx,
     margin: '0',
-    backgroundColor: STRIP_TINT,
+    backgroundColor: new vscode.ThemeColor('editor.background'),
   };
   if (textStyle) {
     before.color = textStyle.color;
