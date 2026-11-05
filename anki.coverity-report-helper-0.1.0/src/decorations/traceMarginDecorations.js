@@ -2,25 +2,25 @@
 
 const vscode = require('vscode');
 const { gutterWidth } = require('./gutterLaneSvg');
+const { beforeStripStepBadge } = require('./stripStepBadgeBefore');
 const { lineDecorationRange } = require('./editorLineRange');
 const { stripLineLayout } = require('./codeLensLayout');
+
+const EDITOR_BG = new vscode.ThemeColor('editor.background');
 
 /**
  * One `before` per line (dual decoration types stacked horizontally and hid step labels in Cursor).
  */
-function beforeStripCell(widthPx, layout, contentText, textStyle) {
-  const before = {
-    contentText,
-    width: `${widthPx}px`,
-    height: layout.heightPx,
-    margin: '0',
-    backgroundColor: new vscode.ThemeColor('editor.background'),
+function beforeStripCell(widthPx, layout, contentText) {
+  return {
+    before: {
+      contentText,
+      width: `${widthPx}px`,
+      height: layout.heightPx,
+      margin: '0',
+      backgroundColor: EDITOR_BG,
+    },
   };
-  if (textStyle) {
-    before.color = textStyle.color;
-    before.fontWeight = textStyle.fontWeight;
-  }
-  return { before };
 }
 
 function uriMatchesDocument(trackedUri, documentUri) {
@@ -109,18 +109,14 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
   const lineCount = editor.document.lineCount;
   /** @type {vscode.DecorationOptions[]} */
   const decorations = [];
-
   for (let line = 0; line < lineCount; line++) {
     const layout = stripLineLayout(line, lineCount, codeLensRows);
     const step = stepByLine.get(line);
     let renderOptions;
     if (step) {
-      renderOptions = beforeStripCell(marginWidth, layout, `${step.stepNumber}`, {
-        color: step.isActiveStep ? '#e8a838' : '#b8bcc4',
-        fontWeight: step.isActiveStep ? 'bold' : 'normal',
-      });
+      renderOptions = beforeStripStepBadge(marginWidth, layout, step.stepNumber, step.isActiveStep);
     } else {
-      renderOptions = beforeStripCell(marginWidth, layout, '\u200b', null);
+      renderOptions = beforeStripCell(marginWidth, layout, '\u200b');
     }
 
     decorations.push({
