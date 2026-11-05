@@ -12,6 +12,12 @@ const COLORS = {
   activeText: '#e8a838',
 };
 
+const SECTION_PAD_X = 10;
+const SECTION_RX = 4;
+const SECTION_FILL = '#3a3d44';
+const SECTION_STROKE = '#52565e';
+const SECTION_TEXT = '#d0d3da';
+
 function escapeSvgText(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
@@ -76,8 +82,44 @@ function linkPillDataUri(text, active) {
   };
 }
 
+function sectionPillWidthForText(text) {
+  const display = String(text || '');
+  return Math.max(MIN_WIDTH, estimateInnerWidth(display) + SECTION_PAD_X * 2);
+}
+
+/**
+ * Rounded-rectangle label (non-link) for section headers above the trace table.
+ */
+function buildSectionPillSvg(text) {
+  const display = String(text || '');
+  const width = sectionPillWidthForText(display);
+  const rx = SECTION_RX;
+  const textY = PILL_HEIGHT / 2 + 4;
+  const textX = SECTION_PAD_X;
+
+  const parts = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${PILL_HEIGHT}" viewBox="0 0 ${width} ${PILL_HEIGHT}">`,
+    `<rect x="0.5" y="0.5" width="${width - 1}" height="${PILL_HEIGHT - 1}" rx="${rx}" fill="${SECTION_FILL}" stroke="${SECTION_STROKE}" stroke-width="1"/>`,
+    `<text x="${textX}" y="${textY}" text-anchor="start" font-size="${FONT_SIZE}" font-weight="600" font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="${SECTION_TEXT}">${escapeSvgText(display)}</text>`,
+    '</svg>',
+  ];
+  return { svg: parts.join(''), width, height: PILL_HEIGHT, text: display };
+}
+
+function sectionPillDataUri(text) {
+  const built = buildSectionPillSvg(text);
+  return {
+    uri: `data:image/svg+xml;utf8,${encodeURIComponent(built.svg)}`,
+    width: built.width,
+    height: built.height,
+    text: built.text,
+  };
+}
+
 module.exports = {
   buildLinkPillSvg,
   linkPillDataUri,
+  buildSectionPillSvg,
+  sectionPillDataUri,
   PILL_HEIGHT,
 };

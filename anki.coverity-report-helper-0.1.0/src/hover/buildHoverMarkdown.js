@@ -1,7 +1,9 @@
 'use strict';
 
 const { traceStepCellDataUri, TRACE_ROW_HEIGHT, TRACE_COL_WIDTH } = require('./traceTimelineSvg');
-const { linkPillDataUri } = require('./linkPillSvg');
+const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPillSvg');
+
+const TRACE_SECTION_LABEL = 'Trace Steps';
 
 function escapeMd(s) {
   return String(s || '').replace(/([\\`*_[\]])/g, '\\$1');
@@ -46,8 +48,19 @@ function linkCellHtml(finding, i, eventIndex) {
   );
 }
 
+function traceSectionHeaderRowHtml() {
+  const pill = sectionPillDataUri(TRACE_SECTION_LABEL);
+  const alt = escapeHtml(pill.text);
+  return (
+    `<tr height="${PILL_HEIGHT}">` +
+    `<td colspan="2" height="${PILL_HEIGHT}">` +
+    `<img src="${pill.uri}" width="${pill.width}" height="${PILL_HEIGHT}" alt="${alt}" />` +
+    `</td></tr>`
+  );
+}
+
 /**
- * N×2 table: 18×18 timeline img + 18px-tall link img per row (exact heights align).
+ * Section pill (first table row) + N×2 trace rows; pill row sits flush with trace rows.
  */
 function buildTraceTableHtml(finding, eventIndex) {
   const n = finding.events.length;
@@ -55,7 +68,8 @@ function buildTraceTableHtml(finding, eventIndex) {
     return '';
   }
 
-  let html = '<table>';
+  let html = '<br><table>';
+  html += traceSectionHeaderRowHtml();
   for (let i = 0; i < n; i++) {
     html += `<tr height="${ROW}">`;
     html += timelineCellHtml(i, eventIndex);
@@ -91,17 +105,6 @@ function buildCoverityHoverMarkdown(finding, eventIndex) {
   }
 
   appendTraceTableHtml(md, finding, eventIndex);
-
-  const navLinks = [];
-  if (eventIndex > 0) {
-    navLinks.push(`[← Previous step](command:coverity.previousTraceStep)`);
-  }
-  if (eventIndex < finding.events.length - 1) {
-    navLinks.push(`[Next step →](command:coverity.nextTraceStep)`);
-  }
-  if (navLinks.length) {
-    md.appendMarkdown(`\n${navLinks.join(' · ')}\n`);
-  }
 
   return md;
 }
