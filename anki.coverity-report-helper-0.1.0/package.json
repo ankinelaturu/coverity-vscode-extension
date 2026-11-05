@@ -95,7 +95,7 @@
         "icon": "$(arrow-down)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
-      },
+      }
     ],
     "menus": {
       "commandPalette": [
