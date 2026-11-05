@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",

@@ -7,6 +7,36 @@ const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
 /** @type {vscode.WebviewPanel | null} */
 let panel = null;
 
+/** @type {object | null} */
+let panelSession = null;
+
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {object} session
+ */
+function wireTracePeekPanel(context, session) {
+  if (!panel) {
+    return;
+  }
+  panelSession = session;
+  panel.webview.onDidReceiveMessage(async (msg) => {
+    if (!panelSession || msg?.type !== 'navigate') {
+      return;
+    }
+    const findingId = msg.findingId;
+    const eventIndex = Number(msg.eventIndex);
+    if (!findingId || !Number.isFinite(eventIndex)) {
+      return;
+    }
+    await panelSession.navigateToStep(findingId, eventIndex);
+    const finding = panelSession.getFinding(findingId);
+    if (finding && panel) {
+      const html = await buildTracePeekHtml(panelSession, finding, eventIndex);
+      panel.webview.html = html;
+    }
+  });
+}
+
 function fullTraceCommandUri(findingId, eventIndex) {
   return `command:coverity.showTracePeek?${encodeURIComponent(JSON.stringify([findingId, eventIndex]))}`;
 }
@@ -114,6 +144,7 @@ async function showTracePeek(context, session, findingId, eventIndex) {
   const html = await buildTracePeekHtml(session, finding, ei);
 
   if (panel) {
+    panelSession = session;
     panel.title = `Coverity: ${title}`;
     panel.webview.html = html;
     panel.reveal(vscode.ViewColumn.Beside, true);
@@ -121,12 +152,14 @@ async function showTracePeek(context, session, findingId, eventIndex) {
   }
 
   panel = vscode.window.createWebviewPanel('coverityTracePeek', `Coverity: ${title}`, vscode.ViewColumn.Beside, {
-    enableScripts: false,
+    enableScripts: true,
     retainContextWhenHidden: true,
   });
   panel.webview.html = html;
+  wireTracePeekPanel(context, session);
   panel.onDidDispose(() => {
     panel = null;
+    panelSession = null;
   });
   context.subscriptions.push(panel);
 }

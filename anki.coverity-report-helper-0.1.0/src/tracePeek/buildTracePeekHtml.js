@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const vscode = require('vscode');
 const { describe } = require('../lookup/lookup');
 
@@ -53,6 +54,7 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
   const checker = finding.checkerId || 'Unknown';
   const title = finding.typeTitle || checker;
   const n = finding.events.length;
+  const nonce = crypto.randomBytes(16).toString('base64');
 
   /** @type {Map<string, vscode.TextDocument>} */
   const docCache = new Map();
@@ -86,12 +88,18 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
       : uri?.fsPath || 'unknown';
     const hint = describe(finding.checkerId, ev.label);
     const rows = sliceContextLines(doc, line0, tracked?.range ?? null, ev.rawPayload);
+    const message = (ev.rawPayload || '').trim();
+    const canNavigate = Boolean(tracked?.uri && tracked.status !== 'unresolved');
     blocks.push({
       stepNumber: ei + 1,
+      eventIndex: ei,
+      findingId: finding.id,
       isCurrent: ei === activeEventIndex,
       label: ev.label || 'step',
       locLabel,
       hint,
+      message,
+      canNavigate,
       rows,
     });
   }
@@ -102,6 +110,8 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
       const badge = b.isCurrent ? ' · current step' : '';
       const meta = escapeHtml(`${b.label}${b.hint ? ` — ${b.hint}` : ''}${badge}`);
       const loc = escapeHtml(b.locLabel);
+      const msgText = b.message || '(no message in report)';
+      const msg = escapeHtml(msgText);
       const codeRows = b.rows
         .map((r) => {
           const lineCls = r.isHighlight ? 'line highlight' : 'line';
@@ -112,13 +122,20 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
           );
         })
         .join('');
-      return (
-        `<section class="${cls}">` +
-        `<header class="hdr"><span class="step">Step ${b.stepNumber} of ${n}</span> ` +
-        `<span class="meta">${meta}</span><br/>` +
-        `<span class="loc">${loc}</span></header>` +
-        `<table class="code">${codeRows}</table></section>`
-      );
+
+      const hdrInner =
+        `<span class="row1"><span class="step">Step ${b.stepNumber} of ${n}</span> ` +
+        `<span class="meta">${meta}</span></span>` +
+        `<span class="row2 loc">${loc}</span>` +
+        `<span class="row3 msg">${msg}</span>`;
+
+      const hdr = b.canNavigate
+        ? `<button type="button" class="hdr hdr-link" data-finding-id="${escapeHtml(b.findingId)}" data-event-index="${b.eventIndex}" title="Open this step in the editor">` +
+          hdrInner +
+          `</button>`
+        : `<div class="hdr hdr-static" title="Location unresolved">${hdrInner}</div>`;
+
+      return `<section class="${cls}">${hdr}<table class="code">${codeRows}</table></section>`;
     })
     .join('');
 
@@ -126,7 +143,7 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';" />
 <style>
   body {
     font-family: var(--vscode-font-family);
@@ -155,12 +172,43 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
     box-shadow: 0 0 0 1px var(--vscode-editorWarning-foreground, #e8a838);
   }
   .hdr {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
     padding: 8px 10px;
     background: var(--vscode-editor-inactiveSelectionBackground, rgba(128,128,128,0.15));
     font-size: 0.9em;
+    text-align: left;
+    border: none;
+    color: inherit;
   }
+  .hdr-link {
+    cursor: pointer;
+  }
+  .hdr-link:hover {
+    background: var(--vscode-list-hoverBackground, rgba(128,128,128,0.25));
+  }
+  .hdr-link:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+  }
+  .hdr-static { cursor: default; opacity: 0.95; }
+  .row1, .row2, .row3 { display: block; }
+  .row2 { margin-top: 2px; }
+  .row3 { margin-top: 4px; }
   .step { font-weight: 600; }
-  .loc { font-family: var(--vscode-editor-font-family); font-size: 0.85em; opacity: 0.9; }
+  .loc {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 0.85em;
+    opacity: 0.9;
+  }
+  .msg {
+    font-family: var(--vscode-editor-font-family);
+    font-size: 0.85em;
+    white-space: pre-wrap;
+    word-break: break-word;
+    opacity: 0.95;
+  }
   table.code { width: 100%; border-collapse: collapse; }
   td.ln {
     width: 3em;
@@ -190,6 +238,20 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
   <h1>${escapeHtml(title)}</h1>
   <div class="subtitle"><code>${escapeHtml(checker)}</code> — full trace (${n} step${n === 1 ? '' : 's'})</div>
   ${blockHtml}
+  <script nonce="${nonce}">
+    (function () {
+      const api = acquireVsCodeApi();
+      document.querySelectorAll('.hdr-link').forEach(function (el) {
+        el.addEventListener('click', function () {
+          api.postMessage({
+            type: 'navigate',
+            findingId: el.getAttribute('data-finding-id'),
+            eventIndex: Number(el.getAttribute('data-event-index')),
+          });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>`;
 }
