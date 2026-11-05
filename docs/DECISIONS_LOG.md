@@ -19,6 +19,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-007 | Extension id `anki.coverity-report-helper`; folder rename deferred | Accepted | 2026-11-05 |
 | DEC-008 | No Coverity sidebar; Explorer decorations + Problems + editor | Accepted | 2026-11-05 |
 | DEC-009 | Native Peek uses VS Code diagnostics; hover is separate Markdown | Accepted | 2026-11-05 |
+| DEC-010 | Milestone scope: skip M-final, compare, M6, M7, M14 | Accepted | 2026-11-05 |
+
+---
+
+## DEC-010 — Agreed milestone exclusions
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Do not implement **M-final**, **M-optional-compare**, **M6**, **M7**, or **M14**. Keep **DEC-008** Explorer/Problems/editor surfaces. Implement remaining milestones (M2–M5, M8–M13, M15, M-optional-rerun) fully.
 
 ---
 
