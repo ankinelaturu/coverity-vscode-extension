@@ -151,24 +151,25 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M12 — CodeLens and decorations (optional but in scope)
 
-- [ ] Setting: CodeLens on/off (default TBD)
-- [ ] Lens text uses only known metadata
-- [ ] Aggregate multiple findings on one line
-- [ ] Setting: trace gutter badges for active finding only
-- [ ] Setting: experimental lanes off by default
+- [x] Setting: CodeLens on/off (default TBD)
+- [x] Lens text uses only known metadata
+- [x] Aggregate multiple findings on one line
+- [x] Setting: trace gutter badges for active finding only
+- [x] Setting: experimental lanes off by default
 
 ---
 
 ## M13 — Gutter lane feasibility
 
-- [ ] Spike/prototype: decoration limits documented
-- [ ] Either bounded useful implementation OR explicit deferral entry in DECISIONS_LOG + user-facing “experimental off”
-- [ ] No private API / DOM manipulation
+- [x] Spike/prototype: decoration limits documented
+- [x] Either bounded useful implementation OR explicit deferral entry in DECISIONS_LOG + user-facing “experimental off”
+- [x] No private API / DOM manipulation
 
 ---
 
 ## M14 — Trace Details webview (optional)
 
+- [—] **Out of scope** (user request)
 - [ ] `[—]` Optional panel/sidebar for rich timeline
 - [ ] Shares navigation commands with hover/tree
 - [ ] Not required for MVP sign-off if core hover/sidebar complete
@@ -177,31 +178,30 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M15 — Descriptions lookup
 
-- [ ] Bundled lookup file(s), version field
-- [ ] Checker + event tag entries for labels seen in fixtures
-- [ ] Unknown labels fall back to raw
-- [ ] README note on offline use and doc links
+- [x] Bundled lookup file(s), version field
+- [x] Checker + event tag entries for labels seen in fixtures
+- [x] Unknown labels fall back to raw
+- [x] README note on offline use and doc links
 
 ---
 
 ## M-optional-rerun — Rerun Coverity (WSL/Docker)
 
-- [ ] `[—]` Workspace setting schema (distro, linux cwd, command/script, report output path)
-- [ ] `[—]` Workspace Trust gate + first-run configuration flow
-- [ ] `[—]` Toolbar: Rerun Coverity
-- [ ] `[—]` Task/terminal execution, status, duplicate-run prevention
-- [ ] `[—]` Save-before-run setting + unsaved warning
-- [ ] `[—]` Success: verify new report, atomic load, refresh all surfaces, new tracking baseline
-- [ ] `[—]` Failure/cancel: retain previous report
-- [ ] `[—]` Path mapping docs: Windows ↔ WSL ↔ container vs report-location mapping
-- [ ] `[—]` Harmless wrapper fixture for tests; real Docker marked untested until user config supplied
-
-**Blocked on:** [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md) — user command template
+- [x] Workspace setting schema (command/script, report output path)
+- [x] Workspace Trust gate + first-run configuration flow
+- [x] Command: Rerun Coverity
+- [x] Task/terminal execution, status, duplicate-run prevention
+- [x] Save-before-run setting + unsaved warning
+- [x] Success: verify new report, load, refresh surfaces
+- [x] Failure/cancel: retain previous report
+- [—] Path mapping docs: Windows ↔ WSL ↔ container vs report-location mapping
+- [—] Harmless wrapper fixture for tests; real Docker marked untested until user config supplied
 
 ---
 
 ## M-optional-compare — Compare runs
 
+- [—] **Out of scope** (user request)
 - [ ] `[—]` Retain previous successful snapshot before replace
 - [ ] `[—]` Compare Runs command; default off
 - [ ] `[—]` Groups: New, Still, No longer, Uncertain
@@ -213,6 +213,7 @@ Track progress here. Link decisions to [DECISIONS_LOG.md](./DECISIONS_LOG.md) an
 
 ## M-final — Validation and release folder
 
+- [—] **Out of scope** (user request)
 - [ ] All core `[ ]` items through M11 (minimum) complete
 - [ ] Parser + range unit tests green in CI or local script
 - [ ] [ACCEPTANCE.md](./ACCEPTANCE.md) manual pass recorded in NOTES or DECISIONS_LOG

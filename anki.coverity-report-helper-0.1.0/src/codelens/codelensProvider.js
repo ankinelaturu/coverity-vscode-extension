@@ -23,21 +23,46 @@ function registerCodeLens(session) {
       }
       const lenses = [];
       for (const [line, list] of byLine.entries()) {
-        if (list.length === 1) {
-          const { finding, eventIndex } = list[0];
-          const title = finding.checkerId || finding.typeTitle || 'Coverity';
-          const text = `${title} · Step ${eventIndex + 1} of ${finding.events.length}`;
-          lenses.push(new vscode.CodeLens(new vscode.Range(line, 0, line, 0), {
+        const range = new vscode.Range(line, 0, line, 0);
+        if (list.length > 1) {
+          lenses.push(
+            new vscode.CodeLens(range, {
+              command: 'coverity.chooseFindingsAtLine',
+              title: `${list.length} Coverity findings`,
+              arguments: [document.uri.toString(), line],
+            })
+          );
+          continue;
+        }
+
+        const { finding, eventIndex } = list[0];
+        const checker = finding.checkerId || finding.typeTitle || 'Coverity';
+        const title = finding.typeTitle || checker;
+        const contextTitle = `${title} · Step ${eventIndex + 1} of ${finding.events.length}`;
+        lenses.push(
+          new vscode.CodeLens(range, {
             command: 'coverity.navigateToStep',
-            title: text,
+            title: contextTitle,
             arguments: [finding.id, eventIndex],
-          }));
-        } else {
-          lenses.push(new vscode.CodeLens(new vscode.Range(line, 0, line, 0), {
-            command: 'coverity.showProblems',
-            title: `${list.length} Coverity findings`,
-            arguments: [],
-          }));
+          })
+        );
+        if (eventIndex > 0) {
+          lenses.push(
+            new vscode.CodeLens(range, {
+              command: 'coverity.traceStepRelative',
+              title: '← Prev step',
+              arguments: [finding.id, eventIndex, -1],
+            })
+          );
+        }
+        if (eventIndex < finding.events.length - 1) {
+          lenses.push(
+            new vscode.CodeLens(range, {
+              command: 'coverity.traceStepRelative',
+              title: 'Next step →',
+              arguments: [finding.id, eventIndex, 1],
+            })
+          );
         }
       }
       return lenses;
