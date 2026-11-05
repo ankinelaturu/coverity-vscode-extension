@@ -56,6 +56,7 @@ function activate(context) {
   );
 
   maybeAutoLoadReport(session);
+  decorations.update();
 }
 
 function registerCommands(context, session) {

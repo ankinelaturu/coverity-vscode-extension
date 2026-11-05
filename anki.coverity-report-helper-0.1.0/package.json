@@ -148,6 +148,11 @@
           "type": "boolean",
           "default": true
         },
+        "coverity.gutterDebugProbe": {
+          "type": "boolean",
+          "default": true,
+          "description": "Debug: always draw COV/duck gutter icons on line 1 and the cursor line in C/C++ files (no report required). Set false after verifying the gutter works."
+        },
         "coverity.explorerDecorationsEnabled": {
           "type": "boolean",
           "default": true,

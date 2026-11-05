@@ -3,6 +3,9 @@
 const vscode = require('vscode');
 const { buildTraceLaneGutterDecorations } = require('./gutterLaneDecorations');
 const { buildSimpleGutterBadgeDecorations } = require('./gutterBadgeDecorations');
+const { buildGutterProbeDecorations } = require('./gutterProbe');
+
+const CPP_LANGS = new Set(['c', 'cpp']);
 
 /**
  * Overview ruler + trace gutter (multi-lane or simple step icons).
@@ -28,16 +31,31 @@ class DecorationManager {
     this.traceGutter = vscode.window.createTextEditorDecorationType({
       gutterIconSize: 'contain',
     });
+    this.gutterProbe = vscode.window.createTextEditorDecorationType({
+      gutterIconSize: 'contain',
+    });
     session.onDidChange(() => this.update());
     vscode.window.onDidChangeActiveTextEditor(() => this.update());
     vscode.window.onDidChangeTextEditorSelection(() => this.update());
+    setTimeout(() => this.update(), 500);
   }
 
   update() {
     const editor = vscode.window.activeTextEditor;
-    if (!editor || !this.session.hasReport()) {
+    if (!editor || !CPP_LANGS.has(editor.document.languageId)) {
       return;
     }
+
+    const probeMarks = buildGutterProbeDecorations(editor, this.context);
+    editor.setDecorations(this.gutterProbe, probeMarks);
+
+    if (!this.session.hasReport()) {
+      editor.setDecorations(this.activeStep, []);
+      editor.setDecorations(this.otherStep, []);
+      editor.setDecorations(this.traceGutter, []);
+      return;
+    }
+
     const cfg = vscode.workspace.getConfiguration('coverity');
     const lanesEnabled = cfg.get('experimentalTraceLanes', true);
     const badgesEnabled = cfg.get('traceBadgesEnabled', true);
@@ -81,6 +99,7 @@ class DecorationManager {
     this.activeStep.dispose();
     this.otherStep.dispose();
     this.traceGutter.dispose();
+    this.gutterProbe.dispose();
   }
 }
 
