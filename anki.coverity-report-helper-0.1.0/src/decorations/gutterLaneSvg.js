@@ -144,6 +144,7 @@ function buildSimpleGutterStepSvg(stepNumber, isActive) {
 
 module.exports = {
   ROW_HEIGHT,
+  COLORS,
   gutterWidth,
   buildGutterLaneRowSvg,
   buildSimpleGutterStepSvg,

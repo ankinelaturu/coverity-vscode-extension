@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -13,9 +13,6 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
-    "configurationDefaults": {
-      "editor.lineDecorationsWidth": "72px"
-    },
     "commands": [
       {
         "command": "coverity.loadReport",
@@ -149,7 +146,8 @@
         },
         "coverity.traceBadgesEnabled": {
           "type": "boolean",
-          "default": true
+          "default": false,
+          "description": "Show the COV trace strip between line numbers and code (experimental; off by default). When enabling, set editor.lineDecorationsWidth (e.g. 72px) if the column is too narrow."
         },
         "coverity.explorerDecorationsEnabled": {
           "type": "boolean",
@@ -197,6 +195,11 @@
           "minimum": 0,
           "maximum": 48,
           "description": "Reserved. Per-line strip extension for CodeLens gaps is disabled (causes extra filled rectangles in Cursor). CodeLens layout is unchanged."
+        },
+        "coverity.traceStripConnectors": {
+          "type": "boolean",
+          "default": false,
+          "description": "When trace badges are on: draw box-drawing connectors between in-file steps in the COV strip. Uses text, not SVG."
         },
         "coverity.rerun.enabled": {
           "type": "boolean",

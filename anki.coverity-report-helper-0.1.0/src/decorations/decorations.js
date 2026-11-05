@@ -32,7 +32,11 @@ class DecorationManager {
     vscode.window.onDidChangeActiveTextEditor(() => this.update());
     vscode.window.onDidChangeTextEditorSelection(() => this.update());
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('coverity.traceStripCodeLensBandPx')) {
+      if (
+        e.affectsConfiguration('coverity.traceStripCodeLensBandPx') ||
+        e.affectsConfiguration('coverity.traceStripConnectors') ||
+        e.affectsConfiguration('coverity.traceBadgesEnabled')
+      ) {
         this.update();
       }
     });
@@ -54,7 +58,7 @@ class DecorationManager {
 
     const cfg = vscode.workspace.getConfiguration('coverity');
     const lanesEnabled = cfg.get('experimentalTraceLanes', true);
-    const badgesEnabled = cfg.get('traceBadgesEnabled', true);
+    const badgesEnabled = cfg.get('traceBadgesEnabled', false);
     const active = [];
     const other = [];
 

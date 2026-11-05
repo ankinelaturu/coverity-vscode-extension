@@ -4,6 +4,7 @@ const vscode = require('vscode');
 const { gutterWidth } = require('./gutterLaneSvg');
 const { lineDecorationRange } = require('./editorLineRange');
 const { stripLineLayout } = require('./codeLensLayout');
+const { buildStripTraceRowText, computeStripTraceRowSpecs } = require('./stripTraceRowSvg');
 
 /**
  * One `before` per line (dual decoration types stacked horizontally and hid step labels in Cursor).
@@ -120,9 +121,12 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
   const laneCount = Math.max(1, Math.min(12, cfg.get('traceGutterLaneCount', 8)));
   const laneWidth = Math.max(6, Math.min(16, cfg.get('traceGutterLaneWidth', 8)));
   const marginWidth = lanesEnabled ? gutterWidth(laneCount, laneWidth) : 22;
+  const connectorsEnabled = cfg.get('traceStripConnectors', false);
 
   const { rawSteps, activeEventIndex } = collectInFileTraceSteps(session, editor.document);
   const labelFieldChars = stripLabelFieldChars(rawSteps, marginWidth);
+  const rowSpecs =
+    connectorsEnabled && rawSteps.length > 0 ? computeStripTraceRowSpecs(rawSteps) : null;
 
   /** @type {Map<number, { stepNumber: number, inFileOrdinal: number, isActiveStep: boolean }>} */
   const stepByLine = new Map();
@@ -135,6 +139,15 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
     });
   }
 
+  if (rowSpecs) {
+    for (const spec of rowSpecs.values()) {
+      for (const st of spec.steps) {
+        const hit = rawSteps[st.column];
+        st.isActive = hit != null && hit.eventIndex === activeEventIndex;
+      }
+    }
+  }
+
   const lineCount = editor.document.lineCount;
   /** @type {vscode.DecorationOptions[]} */
   const decorations = [];
@@ -142,8 +155,22 @@ function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows
   for (let line = 0; line < lineCount; line++) {
     const layout = stripLineLayout(line, lineCount, codeLensRows);
     const step = stepByLine.get(line);
+    const traceRow = rowSpecs?.get(line);
     let renderOptions;
-    if (step) {
+
+    if (traceRow) {
+      const rowActive = traceRow.steps.some((s) => s.isActive);
+      renderOptions = beforeStripCell(
+        marginWidth,
+        layout,
+        buildStripTraceRowText(traceRow, labelFieldChars),
+        {
+          color: rowActive ? '#e8a838' : '#b8bcc4',
+          fontWeight: rowActive ? 'bold' : 'normal',
+          fontFamily: 'monospace',
+        }
+      );
+    } else if (step) {
       renderOptions = beforeStripCell(
         marginWidth,
         layout,
