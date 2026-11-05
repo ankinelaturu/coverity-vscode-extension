@@ -34,7 +34,7 @@ function registerCodeLens(session) {
           }));
         } else {
           lenses.push(new vscode.CodeLens(new vscode.Range(line, 0, line, 0), {
-            command: 'coverity.filterFindings',
+            command: 'coverity.showProblems',
             title: `${list.length} Coverity findings`,
             arguments: [],
           }));

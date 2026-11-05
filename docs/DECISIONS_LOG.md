@@ -17,6 +17,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-005 | JavaScript-only extension folder (no npm on target) | Accepted | 2026-11-04 |
 | DEC-006 | Gutter trace lanes deferred; badges + overview ruler only | Accepted | 2026-11-05 |
 | DEC-007 | Extension id `anki.coverity-report-helper`; folder rename deferred | Accepted | 2026-11-05 |
+| DEC-008 | No Coverity sidebar; Explorer decorations + Problems + editor | Accepted | 2026-11-05 |
+
+---
+
+## DEC-008 — Remove dedicated Coverity tree panel
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Drop activity bar container and Findings tree view. Use FileDecorationProvider on Explorer, DiagnosticCollection in Problems, and editor hover/CodeLens/navigation commands.
 
 ---
 

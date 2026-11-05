@@ -1,8 +1,9 @@
 {
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
-  "description": "Load cov-format-errors multiline reports and navigate findings in C/C++ sources.",
-  "version": "0.1.0",
+  "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
+  "version": "0.1.2",
+  "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
   "engines": {
@@ -12,54 +13,94 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
-    "views": {
-      "coverity": [
-        {
-          "id": "coverityFindings",
-          "name": "Coverity Findings"
-        }
-      ]
-    },
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "coverity",
-          "title": "Coverity",
-          "icon": "media/shield.svg"
-        }
-      ]
-    },
     "commands": [
-      { "command": "coverity.loadReport", "title": "Coverity: Load Report", "icon": "$(file)" },
-      { "command": "coverity.reloadReport", "title": "Coverity: Reload Report", "icon": "$(refresh)" },
-      { "command": "coverity.collapseAll", "title": "Coverity: Collapse All", "icon": "$(collapse-all)" },
-      { "command": "coverity.setViewFiles", "title": "View by: Files", "enablement": "coverity.hasReport" },
-      { "command": "coverity.setViewFolders", "title": "View by: Folders", "enablement": "coverity.hasReport" },
-      { "command": "coverity.setViewErrorType", "title": "View by: Error Type", "enablement": "coverity.hasReport" },
-      { "command": "coverity.toggleActiveFileOnly", "title": "Coverity: Toggle Active File Only", "enablement": "coverity.hasReport" },
-      { "command": "coverity.filterFindings", "title": "Coverity: Filter Findings", "enablement": "coverity.hasReport" },
-      { "command": "coverity.configurePathMapping", "title": "Coverity: Configure Path Mapping", "enablement": "coverity.hasReport" },
-      { "command": "coverity.resetAdjustedLocations", "title": "Coverity: Reset Adjusted Locations", "enablement": "coverity.hasReport" },
-      { "command": "coverity.navigateToStep", "title": "Coverity: Navigate to Step" },
-      { "command": "coverity.previousTraceStep", "title": "Coverity: Previous Trace Step", "enablement": "coverity.hasReport" },
-      { "command": "coverity.nextTraceStep", "title": "Coverity: Next Trace Step", "enablement": "coverity.hasReport" },
-      { "command": "coverity.showParseOutput", "title": "Coverity: Show Parse Output", "enablement": "coverity.hasReport" },
-      { "command": "coverity.rerunCoverity", "title": "Coverity: Rerun Analysis (configured runner)", "enablement": "coverity.hasReport" },
-      { "command": "coverity.compareRuns", "title": "Coverity: Compare Runs (optional)", "enablement": "coverity.hasReport" }
+      {
+        "command": "coverity.loadReport",
+        "title": "Load Report",
+        "icon": "$(folder-opened)",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.reloadReport",
+        "title": "Reload Report",
+        "icon": "$(refresh)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.showProblems",
+        "title": "Show Coverity in Problems",
+        "icon": "$(warning)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.showParseOutput",
+        "title": "Show Parse Output",
+        "icon": "$(output)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.rerunCoverity",
+        "title": "Rerun Analysis",
+        "icon": "$(run-all)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.configurePathMapping",
+        "title": "Configure Path Mapping",
+        "icon": "$(link-external)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.resetAdjustedLocations",
+        "title": "Reset Adjusted Locations",
+        "icon": "$(discard)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.navigateToStep",
+        "title": "Navigate to Trace Step",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.previousTraceStep",
+        "title": "Previous Trace Step",
+        "icon": "$(arrow-up)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.nextTraceStep",
+        "title": "Next Trace Step",
+        "icon": "$(arrow-down)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
+        "command": "coverity.compareRuns",
+        "title": "Compare Runs",
+        "icon": "$(diff)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      }
     ],
     "menus": {
-      "view/title": [
-        { "command": "coverity.loadReport", "when": "view == coverityFindings", "group": "navigation@1" },
-        { "command": "coverity.reloadReport", "when": "view == coverityFindings", "group": "navigation@2" },
-        { "command": "coverity.filterFindings", "when": "view == coverityFindings", "group": "navigation@3" },
-        { "command": "coverity.toggleActiveFileOnly", "when": "view == coverityFindings", "group": "navigation@4" },
-        { "command": "coverity.collapseAll", "when": "view == coverityFindings", "group": "navigation@5" },
-        { "command": "coverity.rerunCoverity", "when": "view == coverityFindings", "group": "navigation@9" }
-      ],
       "commandPalette": [
-        { "command": "coverity.setViewFiles", "when": "coverity.hasReport" },
-        { "command": "coverity.setViewFolders", "when": "coverity.hasReport" },
-        { "command": "coverity.setViewErrorType", "when": "coverity.hasReport" }
+        { "command": "coverity.loadReport" },
+        { "command": "coverity.reloadReport", "when": "coverity.hasReport" },
+        { "command": "coverity.showProblems", "when": "coverity.hasReport" },
+        { "command": "coverity.showParseOutput", "when": "coverity.hasReport" },
+        { "command": "coverity.configurePathMapping", "when": "coverity.hasReport" },
+        { "command": "coverity.resetAdjustedLocations", "when": "coverity.hasReport" },
+        { "command": "coverity.rerunCoverity", "when": "coverity.hasReport" },
+        { "command": "coverity.compareRuns", "when": "coverity.hasReport" },
+        { "command": "coverity.previousTraceStep", "when": "coverity.hasReport" },
+        { "command": "coverity.nextTraceStep", "when": "coverity.hasReport" }
       ]
     },
     "configuration": {
@@ -94,6 +135,27 @@
         "coverity.traceBadgesEnabled": {
           "type": "boolean",
           "default": true
+        },
+        "coverity.explorerDecorationsEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Coverity finding badges and colors on files/folders in Explorer."
+        },
+        "coverity.explorerBadgeStyle": {
+          "type": "string",
+          "default": "duck",
+          "enum": ["count", "brand", "duck"],
+          "enumDescriptions": [
+            "Show finding count (e.g. 3 or 99+)",
+            "Legacy alias for duck (🦆1–🦆9 / 🦆+)",
+            "Show 🦆1–🦆9 for that many unique findings, 🦆+ for 10 or more (full count in tooltip)"
+          ],
+          "description": "Badge text in Explorer. Duck style uses 🦆 plus digit 1–9, or 🦆+ when count ≥ 10."
+        },
+        "coverity.explorerHighlightActiveFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use a distinct color on the Explorer entry for the active editor file when it has findings."
         },
         "coverity.experimentalTraceLanes": {
           "type": "boolean",

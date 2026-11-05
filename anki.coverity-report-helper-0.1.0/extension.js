@@ -3,11 +3,11 @@
 const vscode = require('vscode');
 const path = require('path');
 const { ReportSession } = require('./src/state/reportSession');
-const { FindingsTreeProvider } = require('./src/views/findingsTree');
 const { DiagnosticsManager } = require('./src/diagnostics/diagnosticsManager');
 const { registerHoverProvider } = require('./src/hover/hoverProvider');
 const { registerCodeLens } = require('./src/codelens/codelensProvider');
 const { DecorationManager } = require('./src/decorations/decorations');
+const { registerFileDecorations } = require('./src/explorer/fileDecorations');
 const { rerunCoverity } = require('./src/rerun/rerun');
 const { compareRuns } = require('./src/compare/compareRuns');
 
@@ -22,26 +22,27 @@ function activate(context) {
   context.subscriptions.push(outputChannel);
 
   const session = new ReportSession(context);
-  const treeProvider = new FindingsTreeProvider(session);
   const diagnostics = new DiagnosticsManager(session);
   const decorations = new DecorationManager(session);
 
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('coverityFindings', treeProvider),
     diagnostics,
     decorations,
+    registerFileDecorations(session),
     registerHoverProvider(session),
     registerCodeLens(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
-    vscode.window.onDidChangeActiveTextEditor(() => {
-      treeProvider.refresh();
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      session.activeEditorUri = editor?.document.uri ?? null;
+      session.fireChange();
       decorations.update();
     })
   );
 
-  registerCommands(context, session, treeProvider);
+  registerCommands(context, session);
 
-  vscode.commands.executeCommand('setContext', 'coverity.hasReport', false);
+  session.syncViewContexts();
+  session.activeEditorUri = vscode.window.activeTextEditor?.document.uri ?? null;
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
@@ -53,43 +54,14 @@ function activate(context) {
   );
 
   maybeAutoLoadReport(session);
-
-  context.subscriptions.push({
-    dispose: () => session.dispose?.(),
-  });
 }
 
-function registerCommands(context, session, treeProvider) {
+function registerCommands(context, session) {
   const reg = (id, fn) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
   reg('coverity.loadReport', () => pickAndLoad(session));
   reg('coverity.reloadReport', () => reload(session));
-  reg('coverity.collapseAll', async () => {
-    await vscode.commands.executeCommand('workbench.actions.treeView.collapseAll', 'coverityFindings');
-  });
-  reg('coverity.setViewFiles', () => {
-    session.viewLayout = 'files';
-    session.fireChange();
-  });
-  reg('coverity.setViewFolders', () => {
-    session.viewLayout = 'folders';
-    session.fireChange();
-  });
-  reg('coverity.setViewErrorType', () => {
-    session.viewLayout = 'errorType';
-    session.fireChange();
-  });
-  reg('coverity.toggleActiveFileOnly', () => {
-    session.activeFileOnly = !session.activeFileOnly;
-    session.fireChange();
-  });
-  reg('coverity.filterFindings', async () => {
-    const q = await vscode.window.showInputBox({ prompt: 'Filter findings (type, path, label)', value: session.filterText });
-    if (q !== undefined) {
-      session.filterText = q;
-      session.fireChange();
-    }
-  });
+  reg('coverity.showProblems', () => vscode.commands.executeCommand('workbench.actions.view.problems'));
   reg('coverity.configurePathMapping', () => configureMapping());
   reg('coverity.resetAdjustedLocations', () => session.resetAdjustedLocations());
   reg('coverity.navigateToStep', (findingId, eventIndex) => session.navigateToStep(findingId, eventIndex));
@@ -121,7 +93,7 @@ async function loadFromUri(session, uri) {
   }
   logParseResult(parsed);
   vscode.window.showInformationMessage(
-    `Coverity: loaded ${parsed.findings.length} finding(s), ${parsed.warnings.length} parse warning(s).`
+    `Coverity: loaded ${parsed.findings.length} finding(s). Use Problems panel and Explorer badges on source files.`
   );
 }
 

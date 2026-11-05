@@ -8,6 +8,7 @@ const { resolveReportPath } = require('../paths/pathResolver');
 const { matchEventRange } = require('../ranges/rangeMatcher');
 const { transformRangeForChange } = require('../tracking/rangeTracker');
 const { saveLocationCache, loadLocationCache, clearLocationCache } = require('../persistence/locationCache');
+const { rebuildExplorerDecorationIndex } = require('../explorer/decorationIndex');
 
 const DIAGNOSTIC_SOURCE = 'Coverity Report';
 
@@ -25,12 +26,13 @@ class ReportSession {
     this.tracked = new Map();
     this.activeFindingId = null;
     this.activeEventIndex = 0;
-    this.viewLayout = 'files';
-    this.activeFileOnly = false;
-    this.filterText = '';
     this._onDidChange = new vscode.EventEmitter();
     this.onDidChange = this._onDidChange.event;
     this._refreshTimer = null;
+    /** @type {vscode.Uri | null} */
+    this.activeEditorUri = null;
+    /** @type {object | null} */
+    this.explorerDecorationIndex = null;
   }
 
   hasReport() {
@@ -39,6 +41,10 @@ class ReportSession {
 
   fireChange() {
     this._onDidChange.fire();
+    this.syncViewContexts();
+  }
+
+  syncViewContexts() {
     vscode.commands.executeCommand('setContext', 'coverity.hasReport', this.hasReport());
   }
 
@@ -119,6 +125,7 @@ class ReportSession {
       }
     }
     await this.persistCache();
+    rebuildExplorerDecorationIndex(this);
   }
 
   applyCacheEntries(entries) {
@@ -306,6 +313,25 @@ class ReportSession {
       }
     }
     return out;
+  }
+
+  /** Unique findings with at least one resolved event in this file (for Explorer badge). */
+  countFindingsForUri(uri) {
+    if (!this.indexes) {
+      return 0;
+    }
+    const uriStr = uri.toString();
+    const findingIds = new Set();
+    for (const finding of this.indexes.findings) {
+      for (let ei = 0; ei < finding.events.length; ei++) {
+        const t = this.getTracked(finding.id, ei);
+        if (t?.uri?.toString() === uriStr) {
+          findingIds.add(finding.id);
+          break;
+        }
+      }
+    }
+    return findingIds.size;
   }
 }
 
