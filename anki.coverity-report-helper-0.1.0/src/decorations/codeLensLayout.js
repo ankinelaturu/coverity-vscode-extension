@@ -3,16 +3,11 @@
 const vscode = require('vscode');
 const { ROW_HEIGHT } = require('./gutterLaneSvg');
 
-/**
- * Extra strip height (px) below a line when the next line has CodeLens (fills the inter-line band).
- * Does not change CodeLens; tune via `coverity.traceStripCodeLensBandPx` if gaps remain.
- */
 function codeLensBandPx() {
-  return Math.max(0, vscode.workspace.getConfiguration('coverity').get('traceStripCodeLensBandPx', 18));
+  return Math.max(0, vscode.workspace.getConfiguration('coverity').get('traceStripCodeLensBandPx', 0));
 }
 
 /**
- * Expected lens rows per line (mirrors codelensProvider).
  * @returns {Map<number, number>}
  */
 function estimateCodeLensRowsPerLine(session, document) {
@@ -49,14 +44,10 @@ function estimateCodeLensRowsPerLine(session, document) {
   return counts;
 }
 
-/**
- * @param {number} line
- * @param {number} lineCount
- * @param {Map<number, number>} codeLensRows
- */
+/** Uniform row height avoids mismatched strip tiles; optional bridge when band px > 0. */
 function stripLineLayout(line, lineCount, codeLensRows) {
   const band = codeLensBandPx();
-  const bridgeDown = line + 1 < lineCount ? codeLensRows.get(line + 1) || 0 : 0;
+  const bridgeDown = band > 0 && line + 1 < lineCount ? codeLensRows.get(line + 1) || 0 : 0;
   const heightPx = ROW_HEIGHT + bridgeDown * band;
   return {
     heightPx: `${heightPx}px`,
@@ -65,6 +56,7 @@ function stripLineLayout(line, lineCount, codeLensRows) {
 }
 
 module.exports = {
+  codeLensBandPx,
   estimateCodeLensRowsPerLine,
   stripLineLayout,
 };

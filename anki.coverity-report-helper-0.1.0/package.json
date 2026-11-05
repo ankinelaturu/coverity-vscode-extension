@@ -193,7 +193,7 @@
         },
         "coverity.traceStripCodeLensBandPx": {
           "type": "number",
-          "default": 18,
+          "default": 0,
           "minimum": 0,
           "maximum": 48,
           "description": "Extra COV strip height (px) below a line when the next line has Coverity CodeLens, to reduce gaps. CodeLens layout is unchanged."

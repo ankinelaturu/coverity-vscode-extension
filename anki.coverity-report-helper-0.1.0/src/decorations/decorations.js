@@ -88,7 +88,7 @@ class DecorationManager {
       const codeLensRows = estimateCodeLensRowsPerLine(this.session, editor.document);
       editor.setDecorations(
         this.traceMargin,
-        buildTraceMarginDecorations(this.session, editor, this.context, lanesEnabled, codeLensRows)
+        buildTraceMarginDecorations(this.session, editor, lanesEnabled, codeLensRows)
       );
     } catch (err) {
       console.error('[Coverity] trace margin decorations failed:', err);

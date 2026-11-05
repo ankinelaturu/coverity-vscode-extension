@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trace hover table (4 steps, active = 2)</title>
+</head>
+<body style="background:#1e1e1e;color:#ccc;font-family:-apple-system,Segoe UI,Helvetica,sans-serif;padding:16px">
+
+<table style="border:0;border-width:0;border-collapse:collapse;border-spacing:0;margin:4px 0 8px 0">
+
+  <tr style="border:0;border-width:0;height:32px">
+    <td style="border:0;border-width:0;width:32px;height:32px;padding:0;margin:0;vertical-align:middle;line-height:0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" style="display:block">
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#5a6270" stroke-width="2"/>
+        <circle cx="16" cy="16" r="12" fill="#3c424a" stroke="#6b7280" stroke-width="1"/>
+        <text x="16" y="20" text-anchor="middle" font-size="11" font-weight="500"
+              font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="#b8bcc4">1</text>
+      </svg>
+    </td>
+    <td style="border:0;border-width:0;height:32px;padding:0 0 0 8px;vertical-align:middle;font-weight:400;opacity:0.82;white-space:nowrap">
+      <a href="#">entering function</a>
+      <span style="opacity:0.7"> — </span>
+      <code style="font-size:11px">nav_reader.c:42</code>
+    </td>
+  </tr>
+
+  <tr style="border:0;border-width:0;height:32px">
+    <td style="border:0;border-width:0;width:32px;height:32px;padding:0;margin:0;vertical-align:middle;line-height:0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" style="display:block">
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#5a6270" stroke-width="2"/>
+        <circle cx="16" cy="16" r="12" fill="#e8a838" stroke="#f5d078" stroke-width="2"/>
+        <text x="16" y="20" text-anchor="middle" font-size="11" font-weight="700"
+              font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="#1a1a1a">2</text>
+      </svg>
+    </td>
+    <td style="border:0;border-width:0;height:32px;padding:0 0 0 8px;vertical-align:middle;font-weight:600;opacity:1;white-space:nowrap">
+      <a href="#">tainted assignment</a>
+      <span style="opacity:0.7"> — </span>
+      <code style="font-size:11px">nav_helpers.c:10</code>
+      <span style="opacity:0.75"> (current)</span>
+    </td>
+  </tr>
+
+  <tr style="border:0;border-width:0;height:32px">
+    <td style="border:0;border-width:0;width:32px;height:32px;padding:0;margin:0;vertical-align:middle;line-height:0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" style="display:block">
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#5a6270" stroke-width="2"/>
+        <circle cx="16" cy="16" r="12" fill="#3c424a" stroke="#6b7280" stroke-width="1"/>
+        <text x="16" y="20" text-anchor="middle" font-size="11" font-weight="500"
+              font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="#b8bcc4">3</text>
+      </svg>
+    </td>
+    <td style="border:0;border-width:0;height:32px;padding:0 0 0 8px;vertical-align:middle;font-weight:400;opacity:0.82;white-space:nowrap">
+      <a href="#">call site</a>
+      <span style="opacity:0.7"> — </span>
+      <code style="font-size:11px">thruster_control.c:88</code>
+    </td>
+  </tr>
+
+  <tr style="border:0;border-width:0;height:32px">
+    <td style="border:0;border-width:0;width:32px;height:32px;padding:0;margin:0;vertical-align:middle;line-height:0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" style="display:block">
+        <line x1="16" y1="0" x2="16" y2="32" stroke="#5a6270" stroke-width="2"/>
+        <circle cx="16" cy="16" r="12" fill="#3c424a" stroke="#6b7280" stroke-width="1"/>
+        <text x="16" y="20" text-anchor="middle" font-size="11" font-weight="500"
+              font-family="-apple-system,Segoe UI,Helvetica,sans-serif" fill="#b8bcc4">4</text>
+      </svg>
+    </td>
+    <td style="border:0;border-width:0;height:32px;padding:0 0 0 8px;vertical-align:middle;font-weight:400;opacity:0.82;white-space:nowrap">
+      <a href="#">sink</a>
+      <span style="opacity:0.7"> — </span>
+      <code style="font-size:11px">thruster_control.c:91</code>
+    </td>
+  </tr>
+
+</table>
+
+</body>
+</html>

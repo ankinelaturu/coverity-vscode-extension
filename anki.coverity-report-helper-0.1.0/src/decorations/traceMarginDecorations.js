@@ -1,48 +1,29 @@
 'use strict';
 
 const vscode = require('vscode');
-const {
-  buildGutterLaneRowSvg,
-  assignTraceLanes,
-  gutterWidth,
-} = require('./gutterLaneSvg');
-const { traceMarginIconUri } = require('./traceMarginIconCache');
+const { gutterWidth } = require('./gutterLaneSvg');
 const { lineDecorationRange } = require('./editorLineRange');
 const { stripLineLayout } = require('./codeLensLayout');
 
-/** Subtle COV column tint (works on dark and light editor backgrounds). */
 const STRIP_TINT = 'rgba(72, 82, 102, 0.28)';
-const STRIP_TINT_ACTIVE = 'rgba(232, 168, 56, 0.2)';
 
-function beforeStripRow(context, svg, widthPx, layout, backgroundColor) {
-  const icon = traceMarginIconUri(context, svg);
-  return {
-    before: {
-      contentIconPath: icon,
-      width: `${widthPx}px`,
-      height: layout.heightPx,
-      margin: '0',
-      backgroundColor,
-    },
+/**
+ * One `before` per line (dual decoration types stacked horizontally and hid step labels in Cursor).
+ */
+function beforeStripCell(widthPx, layout, contentText, textStyle) {
+  const before = {
+    contentText,
+    width: `${widthPx}px`,
+    height: layout.heightPx,
+    margin: '0',
+    backgroundColor: STRIP_TINT,
   };
+  if (textStyle) {
+    before.color = textStyle.color;
+    before.fontWeight = textStyle.fontWeight;
+  }
+  return { before };
 }
-
-function beforeStepRow(stepNumber, active, widthPx, layout) {
-  return {
-    before: {
-      contentText: `${stepNumber}`,
-      width: `${widthPx}px`,
-      height: layout.heightPx,
-      margin: '0',
-      color: active ? '#e8a838' : '#b8bcc4',
-      fontWeight: active ? 'bold' : 'normal',
-      backgroundColor: active ? STRIP_TINT_ACTIVE : STRIP_TINT,
-      border: active ? '1px solid rgba(232, 168, 56, 0.45)' : '1px solid rgba(90, 100, 118, 0.2)',
-    },
-  };
-}
-
-/** @typedef {{ spineLanes?: number[], stepNumber?: number, nodeLane?: number, isActiveStep?: boolean, connectFromLane?: number | null }} RowOpts */
 
 function uriMatchesDocument(trackedUri, documentUri) {
   if (!trackedUri) {
@@ -110,35 +91,20 @@ function collectInFileTraceSteps(session, document) {
  * @param {Map<number, number>} codeLensRows
  * @returns {vscode.DecorationOptions[]}
  */
-function buildTraceMarginDecorations(session, editor, context, lanesEnabled, codeLensRows) {
+function buildTraceMarginDecorations(session, editor, lanesEnabled, codeLensRows) {
   const cfg = vscode.workspace.getConfiguration('coverity');
   const laneCount = Math.max(1, Math.min(12, cfg.get('traceGutterLaneCount', 8)));
   const laneWidth = Math.max(6, Math.min(16, cfg.get('traceGutterLaneWidth', 8)));
   const marginWidth = lanesEnabled ? gutterWidth(laneCount, laneWidth) : 22;
 
   const { rawSteps, activeEventIndex } = collectInFileTraceSteps(session, editor.document);
-  const steps = assignTraceLanes(rawSteps, laneCount);
 
-  /** @type {Map<number, RowOpts>} */
-  const rowByLine = new Map();
-
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    const prev = i > 0 ? steps[i - 1] : null;
-
-    if (prev && prev.line < step.line - 1) {
-      const spineLanes = [prev.lane, step.lane];
-      for (let line = prev.line + 1; line < step.line; line++) {
-        rowByLine.set(line, { spineLanes });
-      }
-    }
-
-    rowByLine.set(step.line, {
-      spineLanes: prev ? [prev.lane, step.lane] : [step.lane],
+  /** @type {Map<number, { stepNumber: number, isActiveStep: boolean }>} */
+  const stepByLine = new Map();
+  for (const step of rawSteps) {
+    stepByLine.set(step.line, {
       stepNumber: step.eventIndex + 1,
-      nodeLane: step.lane,
       isActiveStep: step.eventIndex === activeEventIndex,
-      connectFromLane: prev ? prev.lane : null,
     });
   }
 
@@ -147,21 +113,16 @@ function buildTraceMarginDecorations(session, editor, context, lanesEnabled, cod
   const decorations = [];
 
   for (let line = 0; line < lineCount; line++) {
-    const row = rowByLine.get(line);
     const layout = stripLineLayout(line, lineCount, codeLensRows);
-    const isActiveStep = row?.isActiveStep ?? false;
-    const fillColor = isActiveStep && row?.stepNumber != null ? STRIP_TINT_ACTIVE : STRIP_TINT;
-
+    const step = stepByLine.get(line);
     let renderOptions;
-    if (row?.stepNumber != null) {
-      renderOptions = beforeStepRow(row.stepNumber, isActiveStep, marginWidth, layout);
-    } else if (lanesEnabled) {
-      const spineLanes = row?.spineLanes || [];
-      const svg = buildGutterLaneRowSvg({ laneCount, laneWidth, spineLanes });
-      renderOptions = beforeStripRow(context, svg, marginWidth, layout, fillColor);
+    if (step) {
+      renderOptions = beforeStripCell(marginWidth, layout, `${step.stepNumber}`, {
+        color: step.isActiveStep ? '#e8a838' : '#b8bcc4',
+        fontWeight: step.isActiveStep ? 'bold' : 'normal',
+      });
     } else {
-      const svg = buildGutterLaneRowSvg({ laneCount: 1, laneWidth: marginWidth, spineLanes: [] });
-      renderOptions = beforeStripRow(context, svg, marginWidth, layout, fillColor);
+      renderOptions = beforeStripCell(marginWidth, layout, '\u200b', null);
     }
 
     decorations.push({
