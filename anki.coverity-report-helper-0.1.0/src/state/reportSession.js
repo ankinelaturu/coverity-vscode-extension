@@ -342,9 +342,12 @@ class ReportSession {
       return;
     }
     const doc = await vscode.workspace.openTextDocument(tracked.uri);
-    const editor = await vscode.window.showTextDocument(doc);
     const range = tracked.range;
-    editor.selection = new vscode.Selection(range.start, range.end);
+    const editor = await vscode.window.showTextDocument(doc, {
+      viewColumn: vscode.ViewColumn.One,
+      selection: new vscode.Selection(range.start, range.end),
+      preserveFocus: false,
+    });
     editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
   }
 

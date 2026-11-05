@@ -40,7 +40,7 @@ Then **Developer: Reload Window** in Cursor or VS Code.
 
 ## UI (no separate sidebar)
 
-There is **no Coverity activity bar panel**. After loading a report:
+After loading a report:
 
 - **Explorer** — badges and colors on **files and folders** (rollup), severity tint, multi-line tooltips listing findings
 - **Badge style** (`coverity.explorerBadgeStyle`): `duck` (default: `🦆1`–`🦆9`, or `🦆+` for 10+), `count` (numeric only), or legacy `brand` (same as `duck`)
@@ -49,7 +49,7 @@ There is **no Coverity activity bar panel**. After loading a report:
 - **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
 - **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, step markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
 
-**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens a side panel with every trace step in order, ±2 lines of context, and the current step highlighted.
+**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each step shows ±2 lines of context; click a step header to open that location in the **main editor**. Trace stays in the sidebar.
 
 **Diagnostic severity:** the **last trace step** (main occurrence) is published as **Warning**; earlier steps are **Information** (context only). Source is always `Coverity Report`. Overview ruler highlights active vs other steps of the same finding when trace badges are enabled.
 
@@ -57,13 +57,9 @@ There is **no Coverity activity bar panel**. After loading a report:
 
 Commands: **Command Palette** → `Coverity:` …
 
-### Stale Coverity icon on the activity bar
+### Coverity activity bar
 
-Version **0.1.1+** no longer contributes a sidebar. If you still see an empty **Coverity** shield after reload:
-
-1. **Right‑click the activity bar** (left strip) → uncheck **Coverity**.
-2. Or **Command Palette** → **View: Reset View Locations**.
-3. **Quit Cursor completely** (not only Reload Window) and reopen.
+The duck icon opens **Full Trace** only (no findings tree). Drag the view to the **secondary side bar** on the right if you want trace beside the editor without splitting editor tabs.
 
 ## Parser dev helper
 

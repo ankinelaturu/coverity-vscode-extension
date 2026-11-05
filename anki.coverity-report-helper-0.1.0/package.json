@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -13,6 +13,25 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "coverity",
+          "title": "Coverity",
+          "icon": "media/duck.svg"
+        }
+      ]
+    },
+    "views": {
+      "coverity": [
+        {
+          "type": "webview",
+          "id": "coverity.fullTrace",
+          "name": "Full Trace",
+          "when": "coverity.hasReport"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "coverity.loadReport",

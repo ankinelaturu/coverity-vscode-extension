@@ -21,6 +21,18 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-009 | Native Peek uses VS Code diagnostics; hover is separate Markdown | Accepted | 2026-11-05 |
 | DEC-010 | Milestone scope: skip M-final, compare, M6, M7, M14 | Accepted | 2026-11-05 |
 | DEC-011 | Cursor: trace strip in line-decorations column, not glyph margin | Accepted | 2026-11-05 |
+| DEC-013 | Full Trace in sidebar WebviewView, not editor WebviewPanel | Accepted | 2026-11-05 |
+
+---
+
+## DEC-013 — Full Trace sidebar view
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Context:** Editor-area `WebviewPanel` (Beside) competed with source tabs; step navigation opened in the same split.
+
+**Decision:** Register `coverity.fullTrace` as a **WebviewView** under activity-bar container `coverity` (duck icon). `navigateToStep` opens files in **ViewColumn.One**. User may move the view to the secondary (right) side bar. No findings tree in that container (DEC-008 scope unchanged for bulk navigation).
 
 ---
 

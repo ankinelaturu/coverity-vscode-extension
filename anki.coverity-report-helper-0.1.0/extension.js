@@ -11,7 +11,11 @@ const { registerFileDecorations } = require('./src/explorer/fileDecorations');
 const { registerReportStatusBar } = require('./src/ui/reportStatusBar');
 const { runPickProblemsTypeFilter } = require('./src/ui/problemsTypeFilter');
 const { rerunCoverity } = require('./src/rerun/rerun');
-const { showTracePeek, registerTracePeekCodeActions } = require('./src/tracePeek/tracePeekPanel');
+const {
+  showTracePeek,
+  registerFullTraceView,
+  registerTracePeekCodeActions,
+} = require('./src/tracePeek/tracePeekPanel');
 
 /** @type {vscode.OutputChannel | null} */
 let outputChannel = null;
@@ -33,6 +37,7 @@ function activate(context) {
     registerFileDecorations(session),
     registerHoverProvider(session),
     registerCodeLens(session),
+    registerFullTraceView(context, session),
     registerTracePeekCodeActions(context, session),
     registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
@@ -122,7 +127,7 @@ function registerCommands(context, session) {
   reg('coverity.showParseOutput', () => showParseOutput(session));
   reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
   reg('coverity.showTracePeek', (findingId, eventIndex) =>
-    showTracePeek(context, session, findingId, eventIndex)
+    showTracePeek(session, findingId, eventIndex)
   );
 }
 

@@ -4,37 +4,90 @@ const vscode = require('vscode');
 const { buildTracePeekHtml } = require('./buildTracePeekHtml');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
 
-/** @type {vscode.WebviewPanel | null} */
-let panel = null;
+/** @type {FullTraceViewProvider | null} */
+let viewProvider = null;
 
-/** @type {object | null} */
-let panelSession = null;
+const FULL_TRACE_VIEW_ID = 'coverity.fullTrace';
+
+function emptyTraceViewHtml() {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8" />
+<style>body{font-family:var(--vscode-font-family);color:var(--vscode-foreground);padding:12px;line-height:1.5;}</style></head>
+<body><p><strong>Full Trace</strong></p><p>Load a Coverity report, then use Full Trace from the editor hover, light bulb, or Command Palette.</p></body></html>`;
+}
+
+class FullTraceViewProvider {
+  /**
+   * @param {object} session
+   */
+  constructor(session) {
+    this.session = session;
+    /** @type {vscode.WebviewView | undefined} */
+    this.view = undefined;
+    /** @type {string | null} */
+    this.pendingHtml = null;
+  }
+
+  /**
+   * @param {vscode.WebviewView} webviewView
+   */
+  resolveWebviewView(webviewView) {
+    this.view = webviewView;
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [],
+    };
+
+    webviewView.webview.onDidReceiveMessage(async (msg) => {
+      if (msg?.type !== 'navigate') {
+        return;
+      }
+      const findingId = msg.findingId;
+      const eventIndex = Number(msg.eventIndex);
+      if (!findingId || !Number.isFinite(eventIndex)) {
+        return;
+      }
+      await this.session.navigateToStep(findingId, eventIndex);
+      const finding = this.session.getFinding(findingId);
+      if (finding) {
+        await this.setHtml(await buildTracePeekHtml(this.session, finding, eventIndex));
+      }
+    });
+
+    webviewView.onDidDispose(() => {
+      this.view = undefined;
+    });
+
+    if (this.pendingHtml) {
+      webviewView.webview.html = this.pendingHtml;
+      this.pendingHtml = null;
+    } else {
+      webviewView.webview.html = emptyTraceViewHtml();
+    }
+  }
+
+  /** @param {string} html */
+  async setHtml(html) {
+    if (this.view) {
+      this.view.webview.html = html;
+      this.view.show?.(true);
+    } else {
+      this.pendingHtml = html;
+    }
+  }
+}
 
 /**
  * @param {vscode.ExtensionContext} context
  * @param {object} session
  */
-function wireTracePeekPanel(context, session) {
-  if (!panel) {
-    return;
-  }
-  panelSession = session;
-  panel.webview.onDidReceiveMessage(async (msg) => {
-    if (!panelSession || msg?.type !== 'navigate') {
-      return;
-    }
-    const findingId = msg.findingId;
-    const eventIndex = Number(msg.eventIndex);
-    if (!findingId || !Number.isFinite(eventIndex)) {
-      return;
-    }
-    await panelSession.navigateToStep(findingId, eventIndex);
-    const finding = panelSession.getFinding(findingId);
-    if (finding && panel) {
-      const html = await buildTracePeekHtml(panelSession, finding, eventIndex);
-      panel.webview.html = html;
-    }
-  });
+function registerFullTraceView(context, session) {
+  viewProvider = new FullTraceViewProvider(session);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(FULL_TRACE_VIEW_ID, viewProvider, {
+      webviewOptions: { retainContextWhenHidden: true },
+    })
+  );
+  return viewProvider;
 }
 
 function fullTraceCommandUri(findingId, eventIndex) {
@@ -120,12 +173,11 @@ function resolveTracePeekTarget(session, findingId, eventIndex) {
 }
 
 /**
- * @param {vscode.ExtensionContext} context
  * @param {object} session
  * @param {string | undefined} findingId
  * @param {number | undefined} eventIndex
  */
-async function showTracePeek(context, session, findingId, eventIndex) {
+async function showTracePeek(session, findingId, eventIndex) {
   if (!session.hasReport()) {
     vscode.window.showWarningMessage('Coverity: load a report first.');
     return;
@@ -140,32 +192,22 @@ async function showTracePeek(context, session, findingId, eventIndex) {
   const { finding, eventIndex: ei } = target;
   session.setActive(finding.id, ei);
 
-  const title = finding.typeTitle || finding.checkerId || 'Coverity trace';
   const html = await buildTracePeekHtml(session, finding, ei);
-
-  if (panel) {
-    panelSession = session;
-    panel.title = `Coverity: ${title}`;
-    panel.webview.html = html;
-    panel.reveal(vscode.ViewColumn.Beside, true);
+  if (!viewProvider) {
+    vscode.window.showWarningMessage('Coverity: Full Trace view is not registered.');
     return;
   }
 
-  panel = vscode.window.createWebviewPanel('coverityTracePeek', `Coverity: ${title}`, vscode.ViewColumn.Beside, {
-    enableScripts: true,
-    retainContextWhenHidden: true,
-  });
-  panel.webview.html = html;
-  wireTracePeekPanel(context, session);
-  panel.onDidDispose(() => {
-    panel = null;
-    panelSession = null;
-  });
-  context.subscriptions.push(panel);
+  await viewProvider.setHtml(html);
+  try {
+    await vscode.commands.executeCommand(`${FULL_TRACE_VIEW_ID}.focus`);
+  } catch {
+    // View may be hidden when coverity.hasReport when-clause toggles; content is still updated.
+  }
+  viewProvider.view?.show?.(true);
 }
 
 /**
- * Match a Coverity diagnostic to a finding step (or active finding for merged line diags).
  * @param {object} session
  * @param {vscode.TextDocument} document
  * @param {vscode.Diagnostic} diag
@@ -250,8 +292,10 @@ function registerTracePeekCodeActions(context, session) {
 
 module.exports = {
   showTracePeek,
+  registerFullTraceView,
   registerTracePeekCodeActions,
   resolveTracePeekTarget,
   fullTraceCommandUri,
   primaryFindingHitOnLine,
+  FULL_TRACE_VIEW_ID,
 };
