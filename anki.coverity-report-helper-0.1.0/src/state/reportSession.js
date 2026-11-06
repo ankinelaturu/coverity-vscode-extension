@@ -528,10 +528,6 @@ class ReportSession {
       map.get(key).push(diag);
     }
 
-    for (const [uriStr, list] of map.entries()) {
-      map.set(uriStr, mergeDiagnosticsOnSameLine(list));
-    }
-
     return map;
   }
 
@@ -574,41 +570,6 @@ class ReportSession {
 
 function trackKey(findingId, eventIndex) {
   return `${findingId}:${eventIndex}`;
-}
-
-/** One squiggle/hover block per line when several findings share it (extension hover cycles findings). */
-function mergeDiagnosticsOnSameLine(diags) {
-  if (diags.length <= 1) {
-    return diags;
-  }
-  /** @type {Map<number, vscode.Diagnostic[]>} */
-  const byLine = new Map();
-  for (const d of diags) {
-    const line = d.range.start.line;
-    if (!byLine.has(line)) {
-      byLine.set(line, []);
-    }
-    byLine.get(line).push(d);
-  }
-  /** @type {vscode.Diagnostic[]} */
-  const out = [];
-  for (const group of byLine.values()) {
-    if (group.length === 1) {
-      out.push(group[0]);
-      continue;
-    }
-    let range = group[0].range;
-    let severity = group[0].severity;
-    for (let i = 1; i < group.length; i++) {
-      range = range.union(group[i].range);
-      severity = Math.min(severity, group[i].severity);
-    }
-    const msg = `${group.length} Coverity findings on this line — use Quick Fix: Full Trace`;
-    const merged = new vscode.Diagnostic(range, msg, severity);
-    merged.source = DIAGNOSTIC_SOURCE;
-    out.push(merged);
-  }
-  return out;
 }
 
 function hashContent(text) {
