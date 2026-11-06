@@ -220,30 +220,18 @@ function findingStepForDiagnostic(session, document, diag) {
     return null;
   }
 
-  if (diag.message.includes('Coverity findings on this line')) {
-    if (session.activeFindingId) {
-      return {
-        findingId: session.activeFindingId,
-        eventIndex: session.activeEventIndex,
-      };
-    }
-    const line = diag.range.start.line;
-    const onLine = session.getEventsOnLine(document.uri, line);
-    if (onLine.length > 0) {
-      return { findingId: onLine[0].finding.id, eventIndex: onLine[0].eventIndex };
-    }
-    return null;
-  }
-
+  /** Primary diagnostic range is the last trace step only. */
   for (const finding of session.indexes.findings) {
-    for (let ei = 0; ei < finding.events.length; ei++) {
-      const t = session.getTracked(finding.id, ei);
-      if (!t?.uri || t.uri.toString() !== document.uri.toString() || !t.range) {
-        continue;
-      }
-      if (t.range.intersection(diag.range) || t.range.contains(diag.range.start)) {
-        return { findingId: finding.id, eventIndex: ei };
-      }
+    const lastEi = finding.events.length - 1;
+    if (lastEi < 0) {
+      continue;
+    }
+    const t = session.getTracked(finding.id, lastEi);
+    if (!t?.uri || t.uri.toString() !== document.uri.toString() || !t.range) {
+      continue;
+    }
+    if (t.range.intersection(diag.range) || t.range.contains(diag.range.start)) {
+      return { findingId: finding.id, eventIndex: lastEi };
     }
   }
   return null;

@@ -481,50 +481,59 @@ class ReportSession {
     this.setActive(first.finding.id, first.eventIndex);
   }
 
-  /** Diagnostics grouped by document URI string */
+  /**
+   * One Problem per finding: range + message on the last trace step. Earlier steps + main step are
+   * relatedInformation in event order (0..n-1), not sorted by line number.
+   */
   collectDiagnostics() {
     /** @type {Map<string, vscode.Diagnostic[]>} */
     const map = new Map();
     if (!this.indexes) {
       return map;
     }
-    /** @type {Map<string, { ei: number, finding: object, ev: object, tracked: object }>} */
-    const bestOnLine = new Map();
     const checkerFilter = this.problemsCheckerFilter;
 
     for (const finding of this.indexes.findings) {
       if (checkerFilter && (finding.checkerId || 'Unknown') !== checkerFilter) {
         continue;
       }
-      for (let ei = 0; ei < finding.events.length; ei++) {
+      const n = finding.events.length;
+      if (n === 0) {
+        continue;
+      }
+      const lastEi = n - 1;
+      const mainTracked = this.getTracked(finding.id, lastEi);
+      if (!mainTracked?.uri || !mainTracked.range) {
+        continue;
+      }
+
+      const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
+      const mainEv = finding.events[lastEi];
+      const hint = describe(finding.checkerId, mainEv.label);
+      const core = `[${finding.checkerId || 'Unknown'}] ${mainEv.label}${hint ? ` — ${hint}` : ''}: ${mainEv.rawPayload || title}`.trim();
+      const msg = `${core} — CodeLens/Hover: Full Trace`;
+      const diag = new vscode.Diagnostic(mainTracked.range, msg, vscode.DiagnosticSeverity.Warning);
+      diag.source = DIAGNOSTIC_SOURCE;
+      diag.code = finding.checkerId || undefined;
+
+      /** @type {vscode.DiagnosticRelatedInformation[]} */
+      const related = [];
+      for (let ei = 0; ei < n; ei++) {
         const ev = finding.events[ei];
-        const tracked = this.getTracked(finding.id, ei);
-        if (!tracked?.uri || !tracked.range) {
+        const t = this.getTracked(finding.id, ei);
+        if (!t?.uri || !t.range) {
           continue;
         }
-        const line = tracked.range.start.line;
-        const slotKey = `${tracked.uri.toString()}\0${line}\0${finding.id}`;
-        const prev = bestOnLine.get(slotKey);
-        if (!prev || ei > prev.ei) {
-          bestOnLine.set(slotKey, { ei, finding, ev, tracked });
-        }
+        const stepHint = describe(finding.checkerId, ev.label);
+        const stepCore = `[${ei + 1}/${n}] ${ev.label}${stepHint ? ` — ${stepHint}` : ''}: ${ev.rawPayload || title}`.trim();
+        related.push(new vscode.DiagnosticRelatedInformation(new vscode.Location(t.uri, t.range), stepCore));
       }
-    }
+      diag.relatedInformation = related;
 
-    for (const { ei, finding, ev, tracked } of bestOnLine.values()) {
-      const key = tracked.uri.toString();
+      const key = mainTracked.uri.toString();
       if (!map.has(key)) {
         map.set(key, []);
       }
-      const isMain = ei === finding.events.length - 1;
-      const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
-      const hint = describe(finding.checkerId, ev.label);
-      const core = `[${finding.checkerId || 'Unknown'}] ${ev.label}${hint ? ` — ${hint}` : ''}: ${ev.rawPayload || title}`.trim();
-      const msg = `${core} — CodeLens/Hover: Full Trace`;
-      const severity = isMain ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Information;
-      const diag = new vscode.Diagnostic(tracked.range, msg, severity);
-      diag.source = DIAGNOSTIC_SOURCE;
-      diag.code = finding.checkerId || undefined;
       map.get(key).push(diag);
     }
 

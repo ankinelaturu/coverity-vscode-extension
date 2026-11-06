@@ -25,6 +25,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-014 | Nested trace step prefixes (`1.1.`) flat list + UI indent | Accepted | 2026-11-05 |
 | DEC-015 | Title-only `Type:` + unnumbered `tag: message` events | Accepted | 2026-11-05 |
 | DEC-016 | Live edit tracking (shift + rematch) | Accepted | 2026-11-05 |
+| DEC-017 | Problems: one diagnostic per finding; trace in relatedInformation | Accepted | 2026-11-06 |
+
+---
+
+## DEC-017 — Problems: one row per finding; trace steps as related information
+
+**Status:** Accepted  
+**Date:** 2026-11-06
+
+**Decision:** `collectDiagnostics` publishes one `vscode.Diagnostic` per finding with `range` + message on the **last** trace step (warning). Every resolved step is listed in `relatedInformation` in **event index order** (same order as the trace sequence), including the final step. No merge of multiple findings on one line.
 
 ---
 
