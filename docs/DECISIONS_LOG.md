@@ -23,6 +23,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-011 | Cursor: trace strip in line-decorations column, not glyph margin | Accepted | 2026-11-05 |
 | DEC-013 | Full Trace in sidebar WebviewView, not editor WebviewPanel | Accepted | 2026-11-05 |
 | DEC-014 | Nested trace step prefixes (`1.1.`) flat list + UI indent | Accepted | 2026-11-05 |
+| DEC-015 | Title-only `Type:` + unnumbered `tag: message` events | Accepted | 2026-11-05 |
+
+---
+
+## DEC-015 — Title-only Type and unnumbered trace lines
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** Parse `Type: Title` without `(checker)` using synthetic checker id from title slug. After a `path:line:col:` line, accept `label: payload` without `N.` prefix and assign auto step numbers `1`, `2`, …
 
 ---
 

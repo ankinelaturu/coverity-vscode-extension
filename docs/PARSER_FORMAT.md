@@ -68,7 +68,8 @@ interstellar/lib/log/log_format.c:7:5:
 | Absolute paths | Resolve as-is (e.g. `~/c-keil-root/...`) |
 | Workspace-relative paths | Resolve against **workspace / project root**, not report file directory |
 | `Type:` line | Regex: `Type:\s*(.+)\(([^)]+)\)\s*$` for title + checkerId (adjust for MISRA titles with nested parens) |
-| Event line | Leading whitespace; optional `N.` or nested `N.M.` prefix; label; first `:`; remainder = raw message/snippet |
+| Event line | Leading whitespace; optional `N.` / nested `N.M.` **or** (after a location line) `tag: message` with **no** step number — auto-numbered `1`, `2`, … within the finding |
+| **Type (no checker)** | `Type: Unnecessary Header files` — whole line is title; synthetic checker id from title (e.g. `UNNECESSARY_HEADER_FILES`) |
 | Unknown lines | Warning + line number; never silently drop |
 
 **MISRA `Type:` lines** often look like:

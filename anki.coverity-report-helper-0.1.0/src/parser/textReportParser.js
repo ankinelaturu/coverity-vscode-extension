@@ -8,11 +8,11 @@
 /** Parsed report + finding object schema revision (see docs/PARSER_FORMAT.md). */
 const SCHEMA_VERSION = 1;
 
-/** Example: `  Type: Explicit null dereferenced (FORWARD_NULL)` */
-const TYPE_LINE_RE = /^\s*Type:\s*(.+)\s+\((.+)\)\s*$/;
-
 /** Flat `1.` or nested `1.1.` / `2.1.3.` before label: payload */
 const NUMBERED_EVENT_RE = /^\s*((?:\d+\.)+)\s*([^:]+):\s*(.*)$/;
+
+/** After a location line: `  tag: message` with no step number */
+const UNNUMBERED_EVENT_RE = /^\s*([^:]+):\s*(.*)$/;
 
 const META_CLASSIFICATION_RE = /^\s*Classification:\s*(.*)\s*$/;
 const META_SEVERITY_RE = /^\s*Severity:\s*(.*)\s*$/;
@@ -131,6 +131,19 @@ function parseCoverityTextReport(text) {
       continue;
     }
 
+    if (pendingLocation && finding) {
+      const unnumbered = parseUnnumberedEventLine(line);
+      if (unnumbered) {
+        const loc = pendingLocation;
+        const autoStep = finding.events.length + 1;
+        finding.events.push(
+          buildEvent(finding.events.length, autoStepMeta(autoStep, unnumbered), loc)
+        );
+        pendingLocation = null;
+        continue;
+      }
+    }
+
     if (looksLikeSummaryLine(line, lineNum === 1)) {
       summaryLines.push(line.trim());
       continue;
@@ -222,15 +235,34 @@ function parsePathLineColumn(s) {
 }
 
 /**
+ * Title-only types get a synthetic checker id for grouping/filter.
+ * @param {string} title
+ */
+function checkerIdFromTitle(title) {
+  const slug = title
+    .trim()
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+  return slug || 'UNKNOWN_TYPE';
+}
+
+/**
+ * `Type: Title (CHECKER)` or `Type: Title` (no parentheses).
  * @param {string} line
  * @returns {{ title: string, checkerId: string } | null}
  */
 function parseTypeLine(line) {
-  const m = line.match(TYPE_LINE_RE);
+  const m = line.match(/^\s*Type:\s*(.+)\s*$/);
   if (!m) {
     return null;
   }
-  return { title: m[1].trim(), checkerId: m[2].trim() };
+  let rest = m[1].trim();
+  const paren = rest.match(/^(.+?)\s+\(([^)]+)\)\s*$/);
+  if (paren) {
+    return { title: paren[1].trim(), checkerId: paren[2].trim() };
+  }
+  return { title: rest, checkerId: checkerIdFromTitle(rest) };
 }
 
 /**
@@ -276,6 +308,47 @@ function parseNumberedEventLine(line) {
     label: m[2].trim(),
     rawPayload: m[3],
   };
+}
+
+/**
+ * @param {number} stepNumber 1-based auto index for this finding
+ * @param {{ label: string, rawPayload: string }} unnumbered
+ */
+function autoStepMeta(stepNumber, unnumbered) {
+  const stepPath = String(stepNumber);
+  return {
+    stepPath,
+    stepDepth: 1,
+    stepSegments: [stepNumber],
+    stepNumber,
+    label: unnumbered.label,
+    rawPayload: unnumbered.rawPayload,
+  };
+}
+
+/**
+ * @param {string} line
+ * @returns {{ label: string, rawPayload: string } | null}
+ */
+function parseUnnumberedEventLine(line) {
+  if (/^\s*Type:/i.test(line)) {
+    return null;
+  }
+  if (META_CLASSIFICATION_RE.test(line) || META_SEVERITY_RE.test(line)) {
+    return null;
+  }
+  if (parseLocationLine(line)) {
+    return null;
+  }
+  const m = line.match(UNNUMBERED_EVENT_RE);
+  if (!m) {
+    return null;
+  }
+  const label = m[1].trim();
+  if (!label) {
+    return null;
+  }
+  return { label, rawPayload: m[2] };
 }
 
 function createFinding(index, startLine) {
@@ -330,4 +403,6 @@ module.exports = {
   fingerprintReportText,
   parseLocationLine,
   parseTypeLine,
+  parseUnnumberedEventLine,
+  checkerIdFromTitle,
 };
