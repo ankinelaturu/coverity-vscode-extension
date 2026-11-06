@@ -33,7 +33,7 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 **Status:** Accepted  
 **Date:** 2026-11-05
 
-**Decision:** On every `onDidChangeTextDocument`, shift tracked ranges via `transformRangeForChange` (including while the buffer is dirty). Overlapping edits mark uncertain and trigger debounced `rematchEventRange` using the tracked line as hint plus `rawPayload`. On save, rematch all events in that file. No file-delete/git watcher (Tier 3 out of scope).
+**Decision:** On every `onDidChangeTextDocument`, shift tracked ranges via `transformRangeForChange` (including while the buffer is dirty). Overlapping edits mark uncertain and trigger debounced `rematchEventRange` using the tracked line as hint plus `rawPayload`. On save, rematch all events in that file. While a hint line exists, rematch must not fall back to the static report line (stale after inserts) — only column fallback on the hint line. No file-delete/git watcher (Tier 3 out of scope).
 
 ---
 
