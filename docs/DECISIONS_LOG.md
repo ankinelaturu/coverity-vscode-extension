@@ -24,6 +24,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-013 | Full Trace in sidebar WebviewView, not editor WebviewPanel | Accepted | 2026-11-05 |
 | DEC-014 | Nested trace step prefixes (`1.1.`) flat list + UI indent | Accepted | 2026-11-05 |
 | DEC-015 | Title-only `Type:` + unnumbered `tag: message` events | Accepted | 2026-11-05 |
+| DEC-016 | Live edit tracking (shift + rematch) | Accepted | 2026-11-05 |
+
+---
+
+## DEC-016 — Live edit tracking (Tier 1 + 2)
+
+**Status:** Accepted  
+**Date:** 2026-11-05
+
+**Decision:** On every `onDidChangeTextDocument`, shift tracked ranges via `transformRangeForChange` (including while the buffer is dirty). Overlapping edits mark uncertain and trigger debounced `rematchEventRange` using the tracked line as hint plus `rawPayload`. On save, rematch all events in that file. No file-delete/git watcher (Tier 3 out of scope).
 
 ---
 

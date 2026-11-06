@@ -12,17 +12,26 @@ const vscode = require('vscode');
  * @param {vscode.TextDocumentChangeEvent} e
  */
 function transformRangeForChange(range, e) {
+  const originalRange = range;
   let start = range.start;
   let end = range.end;
   let uncertain = false;
 
-  for (const change of e.contentChanges) {
-    if (rangesOverlap(range, change.range)) {
+  const changes = [...e.contentChanges].sort((a, b) => {
+    const posA = a.range.start;
+    const posB = b.range.start;
+    if (posA.line !== posB.line) {
+      return posB.line - posA.line;
+    }
+    return posB.character - posA.character;
+  });
+
+  for (const change of changes) {
+    if (rangesOverlap(originalRange, change.range)) {
       uncertain = true;
     }
     start = shiftPosition(start, change);
     end = shiftPosition(end, change);
-    range = new vscode.Range(start, end);
   }
 
   return {

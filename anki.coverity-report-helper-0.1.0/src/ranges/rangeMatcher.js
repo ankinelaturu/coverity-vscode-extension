@@ -12,6 +12,27 @@ const { reportToPosition } = require('./coordinates');
  * @param {string} rawPayload
  * @returns {{ range: vscode.Range, status: TrackingStatus }}
  */
+/**
+ * @param {string} lineText
+ * @param {string} payload
+ * @returns {{ startCol: number, endCol: number } | null}
+ */
+function findPayloadSpanOnLine(lineText, payload) {
+  const exact = lineText.indexOf(payload);
+  if (exact >= 0) {
+    return { startCol: exact, endCol: exact + payload.length };
+  }
+  const trimmedLine = lineText.trim();
+  const trimmedPayload = payload.trim();
+  const idx = trimmedLine.indexOf(trimmedPayload);
+  if (idx >= 0) {
+    const lead = lineText.indexOf(trimmedLine);
+    const startCol = lead + idx;
+    return { startCol, endCol: startCol + trimmedPayload.length };
+  }
+  return null;
+}
+
 function matchEventRange(doc, reportLoc, rawPayload) {
   const lineIdx = Math.max(0, (reportLoc.line || 1) - 1);
   if (lineIdx >= doc.lineCount) {
@@ -23,20 +44,10 @@ function matchEventRange(doc, reportLoc, rawPayload) {
   const payload = (rawPayload || '').trim();
 
   if (payload) {
-    const exact = lineText.indexOf(payload);
-    if (exact >= 0) {
-      const start = new vscode.Position(lineIdx, exact);
-      const end = new vscode.Position(lineIdx, exact + payload.length);
-      return { range: new vscode.Range(start, end), status: 'confident' };
-    }
-    const trimmedLine = lineText.trim();
-    const trimmedPayload = payload.trim();
-    const idx = trimmedLine.indexOf(trimmedPayload);
-    if (idx >= 0) {
-      const lead = lineText.indexOf(trimmedLine);
-      const startCol = lead + idx;
-      const start = new vscode.Position(lineIdx, startCol);
-      const end = new vscode.Position(lineIdx, startCol + trimmedPayload.length);
+    const span = findPayloadSpanOnLine(lineText, payload);
+    if (span) {
+      const start = new vscode.Position(lineIdx, span.startCol);
+      const end = new vscode.Position(lineIdx, span.endCol);
       return { range: new vscode.Range(start, end), status: 'confident' };
     }
   }
@@ -49,6 +60,43 @@ function matchEventRange(doc, reportLoc, rawPayload) {
   return { range: new vscode.Range(start, end), status: payload ? 'uncertain' : 'fallback' };
 }
 
+/**
+ * Re-align after edits: search payload near the tracked line first, then report line.
+ * @param {vscode.TextDocument} doc
+ * @param {{ line: number, column: number }} reportLoc 1-based
+ * @param {string} rawPayload
+ * @param {number | undefined} hintLine0 0-based line from current tracked range
+ */
+function rematchEventRange(doc, reportLoc, rawPayload, hintLine0) {
+  const payload = (rawPayload || '').trim();
+  const linesToTry = [];
+  const addLine = (lineIdx) => {
+    if (lineIdx >= 0 && lineIdx < doc.lineCount && !linesToTry.includes(lineIdx)) {
+      linesToTry.push(lineIdx);
+    }
+  };
+  if (hintLine0 != null && Number.isFinite(hintLine0)) {
+    addLine(hintLine0);
+    addLine(hintLine0 - 1);
+    addLine(hintLine0 + 1);
+  }
+  addLine(Math.max(0, (reportLoc.line || 1) - 1));
+
+  if (payload) {
+    for (const lineIdx of linesToTry) {
+      const span = findPayloadSpanOnLine(doc.lineAt(lineIdx).text, payload);
+      if (span) {
+        const start = new vscode.Position(lineIdx, span.startCol);
+        const end = new vscode.Position(lineIdx, span.endCol);
+        return { range: new vscode.Range(start, end), status: 'confident' };
+      }
+    }
+  }
+
+  return matchEventRange(doc, reportLoc, rawPayload);
+}
+
 module.exports = {
   matchEventRange,
+  rematchEventRange,
 };

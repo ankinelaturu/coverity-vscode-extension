@@ -41,6 +41,7 @@ function activate(context) {
     registerTracePeekCodeActions(context, session),
     registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
+    vscode.workspace.onDidSaveTextDocument((doc) => session.handleDocumentSave(doc.uri)),
     vscode.workspace.onDidRenameFiles((e) => session.handleFilesRenamed(e.files)),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       session.activeEditorUri = editor?.document.uri ?? null;

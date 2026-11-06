@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { parseCoverityTextReport, fingerprintReportText } = require('../parser/textReportParser');
 const { buildReportIndexes } = require('../model/indexBuilder');
 const { resolveReportPath } = require('../paths/pathResolver');
-const { matchEventRange } = require('../ranges/rangeMatcher');
+const { matchEventRange, rematchEventRange } = require('../ranges/rangeMatcher');
 const { transformRangeForChange } = require('../tracking/rangeTracker');
 const { saveLocationCache, loadLocationCache, clearLocationCache } = require('../persistence/locationCache');
 const { rebuildExplorerDecorationIndex } = require('../explorer/decorationIndex');
@@ -30,6 +30,10 @@ class ReportSession {
     this._onDidChange = new vscode.EventEmitter();
     this.onDidChange = this._onDidChange.event;
     this._refreshTimer = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this._rematchTimer = null;
+    /** @type {vscode.Uri | null} */
+    this._rematchUri = null;
     /** @type {vscode.Uri | null} */
     this.activeEditorUri = null;
     /** @type {object | null} */
@@ -264,26 +268,93 @@ class ReportSession {
       return;
     }
     let touched = false;
+    let scheduleRematch = false;
+    const docKey = e.document.uri.toString();
     for (const t of this.tracked.values()) {
-      if (!t.uri || t.uri.toString() !== e.document.uri.toString() || !t.range) {
-        continue;
-      }
-      if (e.document.isDirty) {
-        t.status = 'uncertain';
-        touched = true;
+      if (!t.uri || t.uri.toString() !== docKey || !t.range) {
         continue;
       }
       const result = transformRangeForChange(t.range, e);
       t.range = result.range;
       if (result.status === 'uncertain') {
         t.status = 'uncertain';
+        scheduleRematch = true;
       }
       t.contentHash = hashContent(e.document.getText());
       touched = true;
     }
-    if (touched) {
+    if (scheduleRematch) {
+      this.scheduleRematchForUri(e.document.uri);
+    } else if (touched) {
       this.scheduleRefresh();
     }
+  }
+
+  /**
+   * @param {vscode.Uri} uri
+   */
+  async handleDocumentSave(uri) {
+    if (!this.indexes) {
+      return;
+    }
+    const rematched = await this.rematchTrackedInUri(uri);
+    if (rematched) {
+      await this.persistCache();
+      this.fireChange();
+    }
+  }
+
+  /**
+   * @param {vscode.Uri} uri
+   * @returns {Promise<boolean>}
+   */
+  async rematchTrackedInUri(uri) {
+    const docKey = uri.toString();
+    let any = false;
+    let doc;
+    for (const t of this.tracked.values()) {
+      if (!t.uri || t.uri.toString() !== docKey || !t.range) {
+        continue;
+      }
+      const finding = this.getFinding(t.findingId);
+      const ev = finding?.events[t.eventIndex];
+      if (!ev) {
+        continue;
+      }
+      if (!doc) {
+        doc = await vscode.workspace.openTextDocument(uri);
+      }
+      const hintLine = t.range.start.line;
+      const matched = rematchEventRange(doc, ev.location, ev.rawPayload, hintLine);
+      t.range = matched.range;
+      t.status = matched.status;
+      t.contentHash = hashContent(doc.getText());
+      any = true;
+    }
+    return any;
+  }
+
+  /**
+   * @param {vscode.Uri} uri
+   */
+  scheduleRematchForUri(uri) {
+    this._rematchUri = uri;
+    if (this._rematchTimer) {
+      clearTimeout(this._rematchTimer);
+    }
+    this._rematchTimer = setTimeout(() => {
+      this._rematchTimer = null;
+      const pending = this._rematchUri;
+      this._rematchUri = null;
+      if (!pending) {
+        return;
+      }
+      void this.rematchTrackedInUri(pending).then((rematched) => {
+        if (rematched) {
+          this.scheduleRefresh();
+        }
+      });
+    }, 400);
   }
 
   /**
