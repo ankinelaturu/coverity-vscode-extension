@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.16",
+  "version": "0.1.19",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -201,6 +201,16 @@
         "coverity.codeLensEnabled": {
           "type": "boolean",
           "default": true
+        },
+        "coverity.traceStepMarkEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Wavy underline on trace steps except the main finding line (last step); that line uses Problems diagnostics only. Underline color follows editorInfo; text color unchanged."
+        },
+        "coverity.traceStepBackgroundEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Deprecated — use coverity.traceStepMarkEnabled. When traceStepMarkEnabled is unset, this toggles the trace step underline."
         },
         "coverity.traceBadgesEnabled": {
           "type": "boolean",

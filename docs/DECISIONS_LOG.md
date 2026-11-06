@@ -26,6 +26,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-015 | Title-only `Type:` + unnumbered `tag: message` events | Accepted | 2026-11-05 |
 | DEC-016 | Live edit tracking (shift + rematch) | Accepted | 2026-11-05 |
 | DEC-017 | Problems: one diagnostic per finding; trace in relatedInformation | Accepted | 2026-11-06 |
+| DEC-018 | Trace step marks (decorations) | Accepted | 2026-11-06 |
+
+---
+
+## DEC-018 — Trace step marks (editor decorations)
+
+**Status:** Accepted  
+**Date:** 2026-11-06
+
+**Decision:** Mark non-main trace steps with wavy underline via CSS `text-decoration-color: var(--vscode-editorInfo-foreground)` only — no decoration `color` (preserve default text). Skip the last event (finding / diagnostic line). Setting `coverity.traceStepMarkEnabled` (default true); legacy `coverity.traceStepBackgroundEnabled` acts as fallback when the new key is absent. Respects Problems checker filter.
 
 ---
 
