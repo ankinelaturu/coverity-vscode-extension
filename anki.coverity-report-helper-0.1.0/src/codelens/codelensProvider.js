@@ -54,7 +54,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   const ruleCanNext = k > 1 && ruleIndex < k - 1;
   const stepCanPrev = stepNum > 1;
   const stepCanNext = stepNum < stepTotal;
-  const ruleTitle = `: ${truncateLabel(findingDisplayName(finding))}`;
+  const ruleTitle = `| | | ${truncateLabel(findingDisplayName(finding))} | | |`;
 
   if (k === 1) {
     pushLens(lenses, range, `←${DOT_OFF} rule 1/1 ${DOT_OFF}→`);
