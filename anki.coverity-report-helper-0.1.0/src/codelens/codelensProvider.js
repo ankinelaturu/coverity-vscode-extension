@@ -49,9 +49,10 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   const ruleCanNext = k > 1 && ruleIndex < k - 1;
   const stepCanPrev = stepNum > 1;
   const stepCanNext = stepNum < stepTotal;
+  const ruleTitle = `: ${truncateLabel(findingDisplayName(finding))}`;
 
   if (k === 1) {
-    pushLens(lenses, range, '← rule 1/1 →');
+    pushLens(lenses, range, `← rule 1/1 → ${ruleTitle}`);
   } else {
     pushLens(
       lenses,
@@ -70,15 +71,11 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
     pushLens(
       lenses,
       range,
-      'rule →',
+      `→ ${ruleTitle}`,
       ruleCanNext ? 'coverity.cycleFindingAtLine' : undefined,
       ruleCanNext ? [uriStr, line, 1] : undefined
     );
   }
-
-  pushLens(lenses, range, ':');
-  pushLens(lenses, range, truncateLabel(findingDisplayName(finding)));
-  pushLens(lenses, range, '|');
 
   if (stepTotal === 1) {
     pushLens(lenses, range, '← step 1/1 →');
@@ -94,13 +91,12 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
     pushLens(
       lenses,
       range,
-      'step →',
+      '→',
       stepCanNext ? 'coverity.traceStepRelative' : undefined,
       stepCanNext ? [finding.id, eventIndex, 1] : undefined
     );
   }
 
-  pushLens(lenses, range, '|');
   pushLens(lenses, range, 'Full Trace', 'coverity.showTracePeek', [finding.id, eventIndex]);
 }
 
