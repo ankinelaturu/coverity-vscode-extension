@@ -97,6 +97,11 @@
         "category": "Coverity"
       },
       {
+        "command": "coverity.pickTraceStep",
+        "title": "Pick Coverity Trace Step",
+        "category": "Coverity"
+      },
+      {
         "command": "coverity.chooseFindingsAtLine",
         "title": "Choose Coverity Finding at Line",
         "category": "Coverity"

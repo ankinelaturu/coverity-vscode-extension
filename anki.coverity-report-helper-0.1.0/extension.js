@@ -17,6 +17,7 @@ const {
   registerTracePeekCodeActions,
 } = require('./src/tracePeek/tracePeekPanel');
 const { listFindingsOnLine, findingDisplayName } = require('./src/codelens/findingsAtLine');
+const { formatStepLabel } = require('./src/model/stepDisplay');
 const { syncEditorNavigationContext } = require('./src/navigation/editorNavigation');
 
 /** @type {vscode.OutputChannel | null} */
@@ -157,6 +158,71 @@ async function pickFindingAtLine(session, uriStr, line) {
   }
 }
 
+/**
+ * @param {object} session
+ * @param {string} findingId
+ * @param {number} eventIndex
+ */
+/**
+ * @param {object} session
+ * @param {string} findingId
+ * @param {number} i
+ * @param {object} ev
+ */
+function traceStepPickMeta(session, findingId, i, ev) {
+  const tracked = session.getTracked(findingId, i);
+  let location = '';
+  if (tracked?.uri) {
+    location = `${path.basename(tracked.uri.fsPath)}:${tracked.range.start.line + 1}`;
+  } else if (ev.location?.rawPath) {
+    location = `${ev.location.rawPath}:${ev.location.line}`;
+  }
+
+  const stepId = formatStepLabel(ev, i + 1);
+  const payload = (ev.rawPayload || '').trim();
+  const tag = (ev.label || '').trim();
+  let description = payload || tag;
+  if (!description && stepId !== String(i + 1)) {
+    description = stepId;
+  }
+
+  return { location, description };
+}
+
+async function pickTraceStep(session, findingId, eventIndex) {
+  const finding = session.getFinding(findingId);
+  if (!finding || finding.events.length === 0) {
+    return;
+  }
+  const n = finding.events.length;
+  const ei = Math.max(0, Math.min(n - 1, Number(eventIndex) || 0));
+
+  if (n === 1) {
+    await session.navigateToStep(findingId, 0);
+    return;
+  }
+
+  const picked = await vscode.window.showQuickPick(
+    finding.events.map((ev, i) => {
+      const { location, description } = traceStepPickMeta(session, findingId, i, ev);
+      const current = i === ei;
+      return {
+        label: `${current ? '$(check) ' : ''}Step ${i + 1} of ${n}`,
+        description: description || undefined,
+        detail: location || undefined,
+        stepIndex: i,
+      };
+    }),
+    {
+      title: 'Coverity trace steps',
+      placeHolder: `Current: step ${ei + 1} of ${n}`,
+    }
+  );
+  if (picked && typeof picked.stepIndex === 'number') {
+    await session.navigateToStep(findingId, picked.stepIndex);
+  }
+}
+
 function registerCommands(context, session) {
   const reg = (id, fn) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
@@ -174,6 +240,7 @@ function registerCommands(context, session) {
   reg('coverity.traceStepRelative', (findingId, eventIndex, delta) =>
     session.navigateRelativeFrom(findingId, eventIndex, delta)
   );
+  reg('coverity.pickTraceStep', (findingId, eventIndex) => pickTraceStep(session, findingId, eventIndex));
   reg('coverity.previousTraceStep', () => session.navigateRelative(-1));
   reg('coverity.nextTraceStep', () => session.navigateRelative(1));
   reg('coverity.cycleFindingAtLine', (uriStr, line, delta) => {
