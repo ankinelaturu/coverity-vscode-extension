@@ -3,6 +3,10 @@
 const vscode = require('vscode');
 const { findingDisplayName } = require('./findingsAtLine');
 
+/** Filled / hollow step arrow affordances in CodeLens. */
+const STEP_DOT_ON = '\u25CF';
+const STEP_DOT_OFF = '\u25CB';
+
 /** @param {string} text @param {number} max */
 function truncateLabel(text, max = 52) {
   const t = String(text || '').trim();
@@ -22,7 +26,8 @@ function pushLens(lenses, range, title, command, args) {
   if (command) {
     lenses.push(new vscode.CodeLens(range, { command, title, arguments: args }));
   } else {
-    lenses.push(new vscode.CodeLens(range, { command: 'coverity.noop', title }));
+    // No command id — VS Code renders plain text, not a link (see codelensWidget).
+    lenses.push(new vscode.CodeLens(range, { title }));
   }
 }
 
@@ -78,12 +83,12 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   }
 
   if (stepTotal === 1) {
-    pushLens(lenses, range, '← step 1/1 →');
+    pushLens(lenses, range, `←${STEP_DOT_OFF} step 1/1 ${STEP_DOT_OFF}→`);
   } else {
     pushLens(
       lenses,
       range,
-      '← step',
+      `←${stepCanPrev ? STEP_DOT_ON : STEP_DOT_OFF}`,
       stepCanPrev ? 'coverity.traceStepRelative' : undefined,
       stepCanPrev ? [finding.id, eventIndex, -1] : undefined
     );
@@ -91,7 +96,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
     pushLens(
       lenses,
       range,
-      'step →',
+      `${stepCanNext ? STEP_DOT_ON : STEP_DOT_OFF}→`,
       stepCanNext ? 'coverity.traceStepRelative' : undefined,
       stepCanNext ? [finding.id, eventIndex, 1] : undefined
     );
