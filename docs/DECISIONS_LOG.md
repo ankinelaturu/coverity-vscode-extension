@@ -27,6 +27,16 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-016 | Live edit tracking (shift + rematch) | Accepted | 2026-11-05 |
 | DEC-017 | Problems: one diagnostic per finding; trace in relatedInformation | Accepted | 2026-11-06 |
 | DEC-018 | Trace step marks (decorations) | Accepted | 2026-11-06 |
+| DEC-019 | CodeLens rule/step navigation + per-line finding memory | Accepted | 2026-11-06 |
+
+---
+
+## DEC-019 — CodeLens multi-finding navigation
+
+**Status:** Accepted  
+**Date:** 2026-11-06
+
+**Decision:** CodeLens per trace line: `← rule i/k →` : `title` `|` `← step n/N →` `|` `Full Trace`. Rule cycle + `i/k` quick pick; per-line `findingId` memory; navigation funnel via `applyNavigationTarget` (Problems, hover links, Full Trace, step nav, editor selection). Hover shows current rule only (no in-hover carousel). Findings on a line sorted by display name; respects Problems checker filter.
 
 ---
 

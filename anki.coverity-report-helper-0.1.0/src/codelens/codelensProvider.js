@@ -1,9 +1,112 @@
 'use strict';
 
 const vscode = require('vscode');
+const { findingDisplayName } = require('./findingsAtLine');
+
+/** @param {string} text @param {number} max */
+function truncateLabel(text, max = 52) {
+  const t = String(text || '').trim();
+  if (t.length <= max) {
+    return t;
+  }
+  return `${t.slice(0, max - 1)}…`;
+}
+
+/**
+ * @param {vscode.Range} range
+ * @param {string} title
+ * @param {string} [command]
+ * @param {unknown[]} [args]
+ */
+function pushLens(lenses, range, title, command, args) {
+  if (command) {
+    lenses.push(new vscode.CodeLens(range, { command, title, arguments: args }));
+  } else {
+    lenses.push(new vscode.CodeLens(range, { command: 'coverity.noop', title }));
+  }
+}
+
+/**
+ * @param {object} session
+ * @param {import('vscode').TextDocument} document
+ * @param {number} line
+ * @param {vscode.CodeLens[]} lenses
+ * @param {vscode.Range} range
+ */
+function appendLineCodeLenses(session, document, line, lenses, range) {
+  const ctx = session.resolveLineRuleContext(document.uri, line);
+  if (!ctx) {
+    return;
+  }
+  const { finding, eventIndex, choices, ruleIndex } = ctx;
+  const uriStr = document.uri.toString();
+  const k = choices.length;
+  const ruleNum = ruleIndex + 1;
+  const stepNum = eventIndex + 1;
+  const stepTotal = finding.events.length;
+
+  const ruleCanPrev = k > 1 && ruleIndex > 0;
+  const ruleCanNext = k > 1 && ruleIndex < k - 1;
+  const stepCanPrev = stepNum > 1;
+  const stepCanNext = stepNum < stepTotal;
+
+  if (k === 1) {
+    pushLens(lenses, range, '← rule 1/1 →');
+  } else {
+    pushLens(
+      lenses,
+      range,
+      '← rule',
+      ruleCanPrev ? 'coverity.cycleFindingAtLine' : undefined,
+      ruleCanPrev ? [uriStr, line, -1] : undefined
+    );
+    pushLens(
+      lenses,
+      range,
+      `${ruleNum}/${k}`,
+      'coverity.pickFindingAtLine',
+      [uriStr, line]
+    );
+    pushLens(
+      lenses,
+      range,
+      'rule →',
+      ruleCanNext ? 'coverity.cycleFindingAtLine' : undefined,
+      ruleCanNext ? [uriStr, line, 1] : undefined
+    );
+  }
+
+  pushLens(lenses, range, ':');
+  pushLens(lenses, range, truncateLabel(findingDisplayName(finding)));
+  pushLens(lenses, range, '|');
+
+  if (stepTotal === 1) {
+    pushLens(lenses, range, '← step 1/1 →');
+  } else {
+    pushLens(
+      lenses,
+      range,
+      '← step',
+      stepCanPrev ? 'coverity.traceStepRelative' : undefined,
+      stepCanPrev ? [finding.id, eventIndex, -1] : undefined
+    );
+    pushLens(lenses, range, `${stepNum}/${stepTotal}`);
+    pushLens(
+      lenses,
+      range,
+      'step →',
+      stepCanNext ? 'coverity.traceStepRelative' : undefined,
+      stepCanNext ? [finding.id, eventIndex, 1] : undefined
+    );
+  }
+
+  pushLens(lenses, range, '|');
+  pushLens(lenses, range, 'Full Trace', 'coverity.showTracePeek', [finding.id, eventIndex]);
+}
 
 function registerCodeLens(session) {
-  return vscode.languages.registerCodeLensProvider(['c', 'cpp'], {
+  const provider = {
+    onDidChangeCodeLenses: session.onDidChange,
     provideCodeLenses(document) {
       if (!session.hasReport()) {
         return [];
@@ -11,72 +114,26 @@ function registerCodeLens(session) {
       if (!vscode.workspace.getConfiguration('coverity').get('codeLensEnabled', true)) {
         return [];
       }
-      const hits = session.getEventsForUri(document.uri);
-      /** @type {Map<number, object[]>} */
-      const byLine = new Map();
-      for (const h of hits) {
-        const line = h.tracked.range.start.line;
-        if (!byLine.has(line)) {
-          byLine.set(line, []);
-        }
-        byLine.get(line).push(h);
-      }
-      const lenses = [];
-      for (const [line, list] of byLine.entries()) {
-        const range = new vscode.Range(line, 0, line, 0);
-        const peekFinding = list[0].finding;
-        const peekStep = list[0].eventIndex;
-        lenses.push(
-          new vscode.CodeLens(range, {
-            command: 'coverity.showTracePeek',
-            title: 'Full Trace',
-            arguments: [peekFinding.id, peekStep],
-          })
-        );
-        if (list.length > 1) {
-          lenses.push(
-            new vscode.CodeLens(range, {
-              command: 'coverity.chooseFindingsAtLine',
-              title: `${list.length} Coverity findings`,
-              arguments: [document.uri.toString(), line],
-            })
-          );
-          continue;
-        }
 
-        const { finding, eventIndex } = list[0];
-        const checker = finding.checkerId || finding.typeTitle || 'Coverity';
-        const title = finding.typeTitle || checker;
-        const contextTitle = `${title} · Step ${eventIndex + 1} of ${finding.events.length}`;
-        lenses.push(
-          new vscode.CodeLens(range, {
-            command: 'coverity.navigateToStep',
-            title: contextTitle,
-            arguments: [finding.id, eventIndex],
-          })
-        );
-        if (eventIndex > 0) {
-          lenses.push(
-            new vscode.CodeLens(range, {
-              command: 'coverity.traceStepRelative',
-              title: '← Prev step',
-              arguments: [finding.id, eventIndex, -1],
-            })
-          );
+      /** @type {Set<number>} */
+      const lines = new Set();
+      for (const h of session.getEventsForUri(document.uri)) {
+        if (h.tracked?.range) {
+          lines.add(h.tracked.range.start.line);
         }
-        if (eventIndex < finding.events.length - 1) {
-          lenses.push(
-            new vscode.CodeLens(range, {
-              command: 'coverity.traceStepRelative',
-              title: 'Next step →',
-              arguments: [finding.id, eventIndex, 1],
-            })
-          );
-        }
+      }
+
+      /** @type {vscode.CodeLens[]} */
+      const lenses = [];
+      for (const line of [...lines].sort((a, b) => a - b)) {
+        const range = new vscode.Range(line, 0, line, 0);
+        appendLineCodeLenses(session, document, line, lenses, range);
       }
       return lenses;
     },
-  });
+  };
+
+  return vscode.languages.registerCodeLensProvider(['c', 'cpp'], provider);
 }
 
 module.exports = { registerCodeLens };

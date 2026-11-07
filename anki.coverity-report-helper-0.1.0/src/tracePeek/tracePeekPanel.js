@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { buildTracePeekHtml } = require('./buildTracePeekHtml');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
+const { applyNavigationTarget, rememberLineFinding } = require('../navigation/editorNavigation');
 
 /** @type {FullTraceViewProvider | null} */
 let viewProvider = null;
@@ -190,7 +191,11 @@ async function showTracePeek(session, findingId, eventIndex) {
   }
 
   const { finding, eventIndex: ei } = target;
-  session.setActive(finding.id, ei);
+  applyNavigationTarget(session, finding.id, ei);
+  const tracked = session.getTracked(finding.id, ei);
+  if (tracked?.uri && tracked.range) {
+    rememberLineFinding(session, tracked.uri, tracked.range.start.line, finding.id);
+  }
 
   const html = await buildTracePeekHtml(session, finding, ei);
   if (!viewProvider) {

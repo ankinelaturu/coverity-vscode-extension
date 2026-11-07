@@ -4,7 +4,6 @@ const vscode = require('vscode');
 const { describe } = require('../lookup/lookup');
 const { traceStepCellDataUri, TRACE_ROW_HEIGHT, TRACE_COL_WIDTH } = require('./traceTimelineSvg');
 const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPillSvg');
-const { cycleHoverFindingCommandUri } = require('./hoverFindingCarousel');
 const { fullTraceCommandUri } = require('../tracePeek/tracePeekPanel');
 const { formatStepLabel, stepMarkdownIndent } = require('../model/stepDisplay');
 
@@ -27,19 +26,6 @@ function navigateStepUri(findingId, eventIndex) {
 }
 
 const ROW = TRACE_ROW_HEIGHT;
-
-function appendFindingCarouselHeader(md, carousel) {
-  if (!carousel || carousel.total <= 1) {
-    return;
-  }
-  const { index, total } = carousel;
-  const prev = `[←](${cycleHoverFindingCommandUri(-1)})`;
-  const next = `[→](${cycleHoverFindingCommandUri(1)})`;
-  md.appendMarkdown(
-    `${prev} **Finding ${index + 1} of ${total} at this line** ${next}\n\n` +
-      `_Trace step prev/next: CodeLens above the line._\n\n`
-  );
-}
 
 function timelineCellHtml(stepIndex, activeIndex) {
   const dataUri = traceStepCellDataUri(stepIndex, activeIndex);
@@ -127,10 +113,9 @@ function friendlyBlurb(finding, ev) {
 /**
  * @param {object} finding
  * @param {number} eventIndex
- * @param {{ findingCarousel?: { index: number, total: number } | null }} [options]
  */
 function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
-  const { findingCarousel = null, useRichTimeline: useRichTimelineOpt } = options;
+  const { useRichTimeline: useRichTimelineOpt } = options;
   const ev = finding.events[eventIndex];
   const md = new vscode.MarkdownString();
   md.isTrusted = true;
@@ -145,8 +130,6 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
   md.appendMarkdown(
     `**[▶ Full Trace](${fullTraceCommandUri(finding.id, eventIndex)})** — all steps with code (±2 lines)\n\n`
   );
-
-  appendFindingCarouselHeader(md, findingCarousel);
 
   const checker = finding.checkerId || 'Unknown';
   const title = finding.typeTitle || checker;

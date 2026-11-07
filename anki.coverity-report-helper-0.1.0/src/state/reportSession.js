@@ -10,6 +10,9 @@ const { transformRangeForChange } = require('../tracking/rangeTracker');
 const { saveLocationCache, loadLocationCache, clearLocationCache } = require('../persistence/locationCache');
 const { rebuildExplorerDecorationIndex } = require('../explorer/decorationIndex');
 const { describe } = require('../lookup/lookup');
+const { listFindingsOnLine, resolveLineRuleContext: resolveLineRuleContextForSession } =
+  require('../codelens/findingsAtLine');
+const { applyNavigationTarget, rememberLineFinding } = require('../navigation/editorNavigation');
 
 const DIAGNOSTIC_SOURCE = 'Coverity Report';
 
@@ -38,8 +41,8 @@ class ReportSession {
     this.activeEditorUri = null;
     /** @type {object | null} */
     this.explorerDecorationIndex = null;
-    /** @type {{ key: string, entries: { findingId: string, eventIndex: number }[], index: number } | null} */
-    this._hoverFindingCarousel = null;
+    /** @type {Map<string, string>} `${uri}\0${line}` → findingId */
+    this._lineFindingMemory = new Map();
     /** @type {string | null} When set, Problems publishes only this checkerId's findings. */
     this.problemsCheckerFilter = null;
   }
@@ -86,6 +89,7 @@ class ReportSession {
     this.parsed = parseCoverityTextReport(text);
     this.indexes = buildReportIndexes(this.parsed);
     this.problemsCheckerFilter = null;
+    this._lineFindingMemory.clear();
     this.tracked.clear();
     await this.rebuildAllTracking();
     const cached = loadLocationCache(this.context.workspaceState, this.reportHash);
@@ -202,62 +206,57 @@ class ReportSession {
   }
 
   setActive(findingId, eventIndex) {
-    this.activeFindingId = findingId;
-    this.activeEventIndex = eventIndex;
-    this.fireChange();
+    applyNavigationTarget(this, findingId, eventIndex);
+  }
+
+  lineMemoryKey(uri, line) {
+    return `${uri.toString()}\0${line}`;
+  }
+
+  /** @param {vscode.Uri} uri @param {number} line */
+  getLineFindingMemory(uri, line) {
+    return this._lineFindingMemory.get(this.lineMemoryKey(uri, line)) || null;
+  }
+
+  /** @param {vscode.Uri} uri @param {number} line @param {string} findingId */
+  setLineFindingMemory(uri, line, findingId) {
+    this._lineFindingMemory.set(this.lineMemoryKey(uri, line), findingId);
   }
 
   /**
-   * @param {string} uriStr
+   * @param {vscode.Uri} uri
    * @param {number} line
-   * @param {{ finding: object, eventIndex: number }[]} sortedChoices
+   * @param {vscode.Position} [position]
    */
-  syncHoverFindingCarousel(uriStr, line, sortedChoices) {
-    const entries = sortedChoices.map(({ finding, eventIndex }) => ({
-      findingId: finding.id,
-      eventIndex,
-    }));
-    const signature = entries.map((e) => `${e.findingId}:${e.eventIndex}`).join('|');
-    const key = `${uriStr}:${line}:${signature}`;
-    if (this._hoverFindingCarousel?.key !== key) {
-      this._hoverFindingCarousel = { key, entries, index: 0 };
-    }
-    const activeIdx = entries.findIndex((e) => e.findingId === this.activeFindingId);
-    if (activeIdx >= 0) {
-      this._hoverFindingCarousel.index = activeIdx;
-    }
-  }
-
-  /** @returns {{ index: number, total: number } | null} */
-  getHoverFindingCarouselPosition() {
-    const car = this._hoverFindingCarousel;
-    if (!car || car.entries.length <= 1) {
-      return null;
-    }
-    return { index: car.index, total: car.entries.length };
+  resolveLineRuleContext(uri, line, position) {
+    return resolveLineRuleContextForSession(this, uri, line, position);
   }
 
   /**
-   * @returns {{ findingId: string, eventIndex: number } | null}
+   * @param {vscode.Uri} uri
+   * @param {number} line
+   * @param {number} delta
    */
-  getHoverFindingCarouselSelection() {
-    const car = this._hoverFindingCarousel;
-    if (!car || car.entries.length === 0) {
-      return null;
-    }
-    return car.entries[car.index];
-  }
-
-  cycleHoverFinding(delta) {
-    const car = this._hoverFindingCarousel;
-    if (!car || car.entries.length <= 1) {
+  cycleFindingAtLine(uri, line, delta) {
+    const ctx = resolveLineRuleContextForSession(this, uri, line);
+    if (!ctx || ctx.choices.length <= 1) {
       return false;
     }
-    const n = car.entries.length;
-    car.index = ((car.index + delta) % n + n) % n;
-    const pick = car.entries[car.index];
-    this.setActive(pick.findingId, pick.eventIndex);
+    const n = ctx.choices.length;
+    const next = (ctx.ruleIndex + delta + n) % n;
+    const pick = ctx.choices[next];
+    applyNavigationTarget(this, pick.finding.id, pick.eventIndex);
+    rememberLineFinding(this, uri, line, pick.finding.id);
     return true;
+  }
+
+  /**
+   * @param {vscode.Uri} uri
+   * @param {number} line
+   */
+  activateFindingAtLine(uri, line, findingId, eventIndex) {
+    applyNavigationTarget(this, findingId, eventIndex);
+    rememberLineFinding(this, uri, line, findingId);
   }
 
   /**
@@ -406,12 +405,13 @@ class ReportSession {
     if (!ev) {
       return;
     }
-    this.setActive(findingId, eventIndex);
+    applyNavigationTarget(this, findingId, eventIndex);
     const tracked = this.getTracked(findingId, eventIndex);
     if (!tracked || tracked.status === 'unresolved' || !tracked.uri) {
       vscode.window.showWarningMessage(tracked?.reason || 'Unresolved location — configure path mapping.');
       return;
     }
+    rememberLineFinding(this, tracked.uri, tracked.range.start.line, findingId);
     const doc = await vscode.workspace.openTextDocument(tracked.uri);
     const range = tracked.range;
     const editor = await vscode.window.showTextDocument(doc, {
@@ -437,7 +437,7 @@ class ReportSession {
     if (!finding) {
       return;
     }
-    this.setActive(findingId, eventIndex);
+    applyNavigationTarget(this, findingId, eventIndex);
     const next = eventIndex + delta;
     if (next < 0 || next >= finding.events.length) {
       return;

@@ -2,43 +2,25 @@
 
 const vscode = require('vscode');
 const { buildCoverityHoverMarkdown } = require('./buildHoverMarkdown');
-const { sortFindingsAtLine } = require('./hoverFindingCarousel');
 
 /**
- * @returns {{ finding: object, eventIndex: number, findingCarousel: { index: number, total: number } | null }}
+ * @returns {{ finding: object, eventIndex: number } | null}
  */
 function resolveHoverContext(session, document, position) {
-  const atCursor = session.getEventsForUri(document.uri).filter(({ tracked }) =>
-    tracked.range.contains(position)
-  );
-  if (atCursor.length === 0) {
+  const line = position.line;
+  const onLine = session
+    .getEventsForUri(document.uri)
+    .filter(({ tracked }) => tracked.range.start.line === line);
+  if (onLine.length === 0) {
     return null;
   }
 
-  const choices = sortFindingsAtLine(session, document, position);
-  if (choices.length === 0) {
+  const ctx = session.resolveLineRuleContext(document.uri, line, position);
+  if (!ctx) {
     return null;
   }
 
-  if (choices.length === 1) {
-    const { finding, eventIndex } = choices[0];
-    return { finding, eventIndex, findingCarousel: null };
-  }
-
-  session.syncHoverFindingCarousel(document.uri.toString(), position.line, choices);
-  const pos = session.getHoverFindingCarouselPosition();
-  const sel = session.getHoverFindingCarouselSelection();
-  const pick = sel
-    ? choices.find((c) => c.finding.id === sel.findingId && c.eventIndex === sel.eventIndex) ||
-      choices.find((c) => c.finding.id === sel.findingId) ||
-      choices[0]
-    : choices[0];
-
-  return {
-    finding: pick.finding,
-    eventIndex: pick.eventIndex,
-    findingCarousel: pos,
-  };
+  return { finding: ctx.finding, eventIndex: ctx.eventIndex };
 }
 
 function registerHoverProvider(session) {
@@ -51,9 +33,7 @@ function registerHoverProvider(session) {
       if (!ctx) {
         return null;
       }
-      const md = buildCoverityHoverMarkdown(ctx.finding, ctx.eventIndex, {
-        findingCarousel: ctx.findingCarousel,
-      });
+      const md = buildCoverityHoverMarkdown(ctx.finding, ctx.eventIndex);
       return new vscode.Hover(md);
     },
   });

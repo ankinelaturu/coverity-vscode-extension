@@ -16,9 +16,56 @@ const {
   registerFullTraceView,
   registerTracePeekCodeActions,
 } = require('./src/tracePeek/tracePeekPanel');
+const { listFindingsOnLine, findingDisplayName } = require('./src/codelens/findingsAtLine');
+const { syncEditorNavigationContext } = require('./src/navigation/editorNavigation');
 
 /** @type {vscode.OutputChannel | null} */
 let outputChannel = null;
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let navSyncTimer = null;
+/** @type {{ uri: string, line: number, character: number } | null} */
+let navSyncPending = null;
+
+function isCpp(doc) {
+  return doc.languageId === 'c' || doc.languageId === 'cpp';
+}
+
+/**
+ * @param {object} session
+ * @param {import('vscode').TextDocument} document
+ * @param {import('vscode').Position | undefined} position
+ */
+function scheduleNavSync(session, document, position) {
+  if (!position || !session.hasReport()) {
+    return;
+  }
+  navSyncPending = {
+    uri: document.uri.toString(),
+    line: position.line,
+    character: position.character,
+  };
+  if (navSyncTimer) {
+    clearTimeout(navSyncTimer);
+  }
+  navSyncTimer = setTimeout(() => {
+    navSyncTimer = null;
+    const pending = navSyncPending;
+    navSyncPending = null;
+    if (!pending) {
+      return;
+    }
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.uri.toString() !== pending.uri) {
+      return;
+    }
+    const pos = editor.selection.active;
+    if (pos.line !== pending.line || pos.character !== pending.character) {
+      return;
+    }
+    syncEditorNavigationContext(session, editor.document, pos);
+  }, 120);
+}
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -47,6 +94,15 @@ function activate(context) {
       session.activeEditorUri = editor?.document.uri ?? null;
       session.fireChange();
       decorations.update();
+      if (editor?.document && isCpp(editor.document)) {
+        syncEditorNavigationContext(session, editor.document, editor.selection.active);
+      }
+    }),
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      if (!isCpp(e.textEditor.document)) {
+        return;
+      }
+      scheduleNavSync(session, e.textEditor.document, e.selections[0]?.active);
     })
   );
 
@@ -69,6 +125,38 @@ function activate(context) {
   decorations.update();
 }
 
+/**
+ * @param {object} session
+ * @param {string | import('vscode').Uri} uriStr
+ * @param {number} line
+ */
+async function pickFindingAtLine(session, uriStr, line) {
+  const uri = typeof uriStr === 'string' ? vscode.Uri.parse(uriStr) : uriStr;
+  const choices = listFindingsOnLine(session, uri, line);
+  if (choices.length === 0) {
+    return;
+  }
+  if (choices.length === 1) {
+    session.activateFindingAtLine(uri, line, choices[0].finding.id, choices[0].eventIndex);
+    return;
+  }
+  const picked = await vscode.window.showQuickPick(
+    choices.map(({ finding, eventIndex }) => {
+      const checker = finding.checkerId || 'Unknown';
+      return {
+        label: findingDisplayName(finding),
+        description: `${checker} — step ${eventIndex + 1} of ${finding.events.length} on this line`,
+        findingId: finding.id,
+        eventIndex,
+      };
+    }),
+    { title: 'Coverity rules at this line', placeHolder: 'Select finding' }
+  );
+  if (picked) {
+    session.activateFindingAtLine(uri, line, picked.findingId, picked.eventIndex);
+  }
+}
+
 function registerCommands(context, session) {
   const reg = (id, fn) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
@@ -88,48 +176,34 @@ function registerCommands(context, session) {
   );
   reg('coverity.previousTraceStep', () => session.navigateRelative(-1));
   reg('coverity.nextTraceStep', () => session.navigateRelative(1));
-  reg('coverity.cycleHoverFinding', async (arg) => {
-    const delta = Array.isArray(arg) ? Number(arg[0]) : Number(arg);
-    if (!Number.isFinite(delta) || delta === 0) {
-      return;
-    }
-    if (!session.cycleHoverFinding(delta)) {
-      return;
-    }
-    await vscode.commands.executeCommand('editor.action.showHover');
-  });
-  reg('coverity.chooseFindingsAtLine', async (uriStr, line) => {
+  reg('coverity.cycleFindingAtLine', (uriStr, line, delta) => {
     const uri = typeof uriStr === 'string' ? vscode.Uri.parse(uriStr) : uriStr;
-    const hits = session.getEventsOnLine(uri, line);
-    if (hits.length === 0) {
+    const d = Number(delta);
+    if (!Number.isFinite(d) || d === 0) {
       return;
     }
-    if (hits.length === 1) {
-      return session.navigateToStep(hits[0].finding.id, hits[0].eventIndex);
-    }
-    const picked = await vscode.window.showQuickPick(
-      hits.map((h) => {
-        const f = h.finding;
-        const checker = f.checkerId || 'Unknown';
-        const title = f.typeTitle || checker;
-        return {
-          label: `${title} (${checker})`,
-          description: `Step ${h.eventIndex + 1} of ${f.events.length}`,
-          findingId: f.id,
-          eventIndex: h.eventIndex,
-        };
-      }),
-      { title: 'Coverity findings at this line' }
-    );
-    if (picked) {
-      return session.navigateToStep(picked.findingId, picked.eventIndex);
-    }
+    session.cycleFindingAtLine(uri, line, d);
   });
+  reg('coverity.pickFindingAtLine', (uriStr, line) => pickFindingAtLine(session, uriStr, line));
+  reg('coverity.chooseFindingsAtLine', (uriStr, line) => pickFindingAtLine(session, uriStr, line));
   reg('coverity.showParseOutput', () => showParseOutput(session));
   reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
   reg('coverity.showTracePeek', (findingId, eventIndex) =>
     showTracePeek(session, findingId, eventIndex)
   );
+  reg('coverity.noop', () => {});
+  reg('coverity.cycleHoverFinding', (arg) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+    const delta = Array.isArray(arg) ? Number(arg[0]) : Number(arg);
+    if (!Number.isFinite(delta) || delta === 0) {
+      return;
+    }
+    const line = editor.selection.active.line;
+    session.cycleFindingAtLine(editor.document.uri, line, delta);
+  });
 }
 
 async function pickAndLoad(session) {

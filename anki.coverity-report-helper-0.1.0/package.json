@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -99,6 +99,16 @@
       {
         "command": "coverity.chooseFindingsAtLine",
         "title": "Choose Coverity Finding at Line",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.cycleFindingAtLine",
+        "title": "Cycle Coverity Rule at Line",
+        "category": "Coverity"
+      },
+      {
+        "command": "coverity.pickFindingAtLine",
+        "title": "Pick Coverity Rule at Line",
         "category": "Coverity"
       },
       {
