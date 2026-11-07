@@ -27,20 +27,8 @@ function estimateCodeLensRowsPerLine(session, document) {
   }
   /** @type {Map<number, number>} */
   const counts = new Map();
-  for (const [line, list] of byLine.entries()) {
-    if (list.length > 1) {
-      counts.set(line, 1);
-      continue;
-    }
-    const { finding, eventIndex } = list[0];
-    let n = 1;
-    if (eventIndex > 0) {
-      n++;
-    }
-    if (eventIndex < finding.events.length - 1) {
-      n++;
-    }
-    counts.set(line, n);
+  for (const line of byLine.keys()) {
+    counts.set(line, 1);
   }
   return counts;
 }
