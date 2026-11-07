@@ -87,11 +87,11 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
       stepCanPrev ? 'coverity.traceStepRelative' : undefined,
       stepCanPrev ? [finding.id, eventIndex, -1] : undefined
     );
-    pushLens(lenses, range, `${stepNum}/${stepTotal}`);
+    pushLens(lenses, range, `step ${stepNum}/${stepTotal}`);
     pushLens(
       lenses,
       range,
-      '→',
+      'step →',
       stepCanNext ? 'coverity.traceStepRelative' : undefined,
       stepCanNext ? [finding.id, eventIndex, 1] : undefined
     );
