@@ -36,7 +36,7 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 **Status:** Accepted  
 **Date:** 2026-11-06
 
-**Decision:** CodeLens per trace line: `← rule i/k →` : `title` `|` `← step n/N →` `|` `Full Trace`. Rule cycle + `i/k` quick pick; per-line `findingId` memory; navigation funnel via `applyNavigationTarget` (Problems, hover links, Full Trace, step nav, editor selection). Hover shows current rule only (no in-hover carousel). Findings on a line sorted by display name; respects Problems checker filter.
+**Decision:** CodeLens per trace line: rule block (`←●` / `←○`, `rule i/k` quick pick, `●→` / `○→`, `||| title |||` plain text); step block (`←●`, `step n/N` quick pick, `●→`); `Full Trace`. VS Code inserts ` | ` between each lens — do not add literal `|` lenses. Disabled arrows use title-only lenses (no command id) so they are not clickable. Per-line `findingId` memory; navigation via `applyNavigationTarget`. Hover shows current rule only (no in-hover carousel). Findings on a line sorted by display name; respects Problems checker filter.
 
 ---
 

@@ -258,7 +258,6 @@ function registerCommands(context, session) {
   reg('coverity.showTracePeek', (findingId, eventIndex) =>
     showTracePeek(session, findingId, eventIndex)
   );
-  reg('coverity.noop', () => {});
   reg('coverity.cycleHoverFinding', (arg) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {

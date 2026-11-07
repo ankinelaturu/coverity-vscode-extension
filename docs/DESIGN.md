@@ -214,7 +214,7 @@ Commands: `Previous Trace Step`, `Next Trace Step` (+ optional keybindings); ord
 
 - Short line: known checker/title + step N of M.
 - Click → reveal finding/step; optional prev/next.
-- Multiple findings same line → one lens “N Coverity findings” + chooser.
+- Multiple findings same line → rule carousel in CodeLens (`rule i/k`, quick pick) + one Problem per finding (DEC-017, DEC-019).
 - Setting to disable; throttle refresh.
 
 ## 13. Gutter badges and lanes (optional / experimental)

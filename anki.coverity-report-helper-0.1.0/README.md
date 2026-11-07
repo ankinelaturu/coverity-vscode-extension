@@ -1,6 +1,6 @@
 # Coverity Report Helper (extension package)
 
-**Extension ID:** `anki.coverity-report-helper` · **Version:** 0.1.0
+**Extension ID:** `anki.coverity-report-helper` · **Version:** 0.1.21
 
 JavaScript VS Code/Cursor extension (no npm) for **cov-format-errors multiline** reports.
 
@@ -46,14 +46,14 @@ After loading a report:
 - **Badge style** (`coverity.explorerBadgeStyle`): `duck` (default: `🦆1`–`🦆9`, or `🦆+` for 10+), `count` (numeric only), or legacy `brand` (same as `duck`)
 - **Extension icon** — `media/duck.svg` (Extensions list only; **not** in the file tree)
 - **Problems** — filter by source `Coverity Report`; **filter icon** on the Problems title bar (or **Coverity: Filter Coverity by Finding Type**) picks a checker such as `FORWARD_NULL` and hides other Coverity markers until you choose **All finding types** (compiler/LSP problems are unchanged)
-- **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens, Alt+Shift+Up/Down for trace steps
+- **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens (rule `rule i/k` + step `step n/N` quick picks, ●/○ step/rule arrows), Alt+Shift+Up/Down for trace steps
 - **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, step markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
 
 **Nested trace steps** — Reports may use dotted step numbers (`1.`, `1.1.`, `2.1.`). See fixture **CID 90100** / `nested_demo.c`; Full Trace indents sub-steps and shows labels like **Step 1.1**.
 
 **Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each step shows ±2 lines of context; click a step header to open that location in the **main editor**. Trace stays in the sidebar.
 
-**Diagnostic severity:** the **last trace step** (main occurrence) is published as **Warning**; earlier steps are **Information** (context only). Source is always `Coverity Report`. Overview ruler highlights active vs other steps of the same finding when trace badges are enabled.
+**Problems:** one **Warning** per finding on the **last trace step**; all steps (including the main line) are listed in **related information** on that diagnostic. Source is `Coverity Report`. Optional trace-step wavy underline: `coverity.traceStepMarkEnabled` (not on the main step line).
 
 **Explorer badge vs Coverity duck logo:** VS Code’s `FileDecorationProvider` only allows a **short text badge** (1–2 characters) and **theme colors**, not custom images. You cannot put the official Coverity duck PNG in the tree. Default badge is **🦆1**–**🦆9** (unique findings on that file/folder) or **🦆+** when count ≥ 10 (exact count in tooltip). Use `"count"` for numeric-only badges.
 
@@ -83,6 +83,6 @@ Bundled `src/lookup/descriptions.json` adds short **checker** and **event tag** 
 
 ## Sample workspace
 
-Use the sibling **`my-repo/`** at the repository root (open as its own window). Default report: `deploy/coverity/coverity-report.txt`.
+Use the sibling **`my-repo/`** at the repository root (open as its own window). Default report: `deploy/coverity/coverity-report.txt`. **Multiple findings on one line:** `interstellar/lib/log_format.c` (90002+90008), `interstellar/src/multi_finding_line.c` (90200–90202).
 
 Project design docs: `../docs/README.md`

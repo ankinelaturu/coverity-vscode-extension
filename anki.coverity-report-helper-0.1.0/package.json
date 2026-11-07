@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -132,7 +132,7 @@
       },
       {
         "command": "coverity.cycleHoverFinding",
-        "title": "Cycle Coverity Finding in Hover",
+        "title": "Cycle Coverity Rule at Caret Line (legacy)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       },
