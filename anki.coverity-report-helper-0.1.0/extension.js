@@ -130,66 +130,6 @@ function activate(context) {
  * @param {string | import('vscode').Uri} uriStr
  * @param {number} line
  */
-/**
- * @param {object} session
- * @param {string} uriStr
- * @param {number} line
- */
-async function ruleStripMenu(session, uriStr, line) {
-  const uri = vscode.Uri.parse(uriStr);
-  const ctx = session.resolveLineRuleContext(uri, line);
-  if (!ctx || ctx.choices.length <= 1) {
-    return;
-  }
-  const { ruleIndex, choices } = ctx;
-  const ruleNum = ruleIndex + 1;
-  const k = choices.length;
-  const picked = await vscode.window.showQuickPick(
-    [
-      { label: '← Previous rule', action: 'prev' },
-      { label: `${ruleNum}/${k} — choose rule…`, action: 'pick' },
-      { label: 'Next rule →', action: 'next' },
-    ],
-    { title: `← rule ${ruleNum}/${k} →`, placeHolder: 'Rule navigation' }
-  );
-  if (!picked) {
-    return;
-  }
-  if (picked.action === 'prev') {
-    session.cycleFindingAtLine(uri, line, -1);
-  } else if (picked.action === 'next') {
-    session.cycleFindingAtLine(uri, line, 1);
-  } else {
-    await pickFindingAtLine(session, uriStr, line);
-  }
-}
-
-/**
- * @param {object} session
- * @param {string} findingId
- * @param {number} eventIndex
- */
-async function stepStripMenu(session, findingId, eventIndex) {
-  const finding = session.getFinding(findingId);
-  if (!finding) {
-    return;
-  }
-  const stepNum = eventIndex + 1;
-  const stepTotal = finding.events.length;
-  const picked = await vscode.window.showQuickPick(
-    [
-      { label: '← Previous step', action: 'prev' },
-      { label: 'Next step →', action: 'next' },
-    ],
-    { title: `← step ${stepNum}/${stepTotal} →`, placeHolder: 'Step navigation' }
-  );
-  if (!picked) {
-    return;
-  }
-  const delta = picked.action === 'prev' ? -1 : 1;
-  session.navigateRelativeFrom(findingId, eventIndex, delta);
-}
-
 async function pickFindingAtLine(session, uriStr, line) {
   const uri = typeof uriStr === 'string' ? vscode.Uri.parse(uriStr) : uriStr;
   const choices = listFindingsOnLine(session, uri, line);
@@ -246,8 +186,6 @@ function registerCommands(context, session) {
   });
   reg('coverity.pickFindingAtLine', (uriStr, line) => pickFindingAtLine(session, uriStr, line));
   reg('coverity.chooseFindingsAtLine', (uriStr, line) => pickFindingAtLine(session, uriStr, line));
-  reg('coverity.ruleStripMenu', (uriStr, line) => ruleStripMenu(session, uriStr, line));
-  reg('coverity.stepStripMenu', (findingId, eventIndex) => stepStripMenu(session, findingId, eventIndex));
   reg('coverity.showParseOutput', () => showParseOutput(session));
   reg('coverity.rerunCoverity', () => rerunCoverity(session, loadFromUri));
   reg('coverity.showTracePeek', (findingId, eventIndex) =>

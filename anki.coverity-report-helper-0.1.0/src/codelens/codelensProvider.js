@@ -13,7 +13,6 @@ function truncateLabel(text, max = 52) {
 }
 
 /**
- * @param {vscode.CodeLens[]} lenses
  * @param {vscode.Range} range
  * @param {string} title
  * @param {string} [command]
@@ -28,50 +27,6 @@ function pushLens(lenses, range, title, command, args) {
 }
 
 /**
- * @param {object} session
- * @param {import('vscode').Uri} uri
- * @param {number} line
- */
-function ruleStripCommand(session, uri, line) {
-  const ctx = session.resolveLineRuleContext(uri, line);
-  if (!ctx || ctx.choices.length <= 1) {
-    return undefined;
-  }
-  const { ruleIndex, choices } = ctx;
-  const ruleCanPrev = ruleIndex > 0;
-  const ruleCanNext = ruleIndex < choices.length - 1;
-  if (ruleCanPrev && !ruleCanNext) {
-    return { command: 'coverity.cycleFindingAtLine', args: [uri.toString(), line, -1] };
-  }
-  if (ruleCanNext && !ruleCanPrev) {
-    return { command: 'coverity.cycleFindingAtLine', args: [uri.toString(), line, 1] };
-  }
-  return { command: 'coverity.ruleStripMenu', args: [uri.toString(), line] };
-}
-
-/**
- * @param {number} stepNum
- * @param {number} stepTotal
- * @param {string} findingId
- * @param {number} eventIndex
- */
-function stepStripCommand(stepNum, stepTotal, findingId, eventIndex) {
-  const stepCanPrev = stepNum > 1;
-  const stepCanNext = stepNum < stepTotal;
-  if (stepTotal <= 1) {
-    return undefined;
-  }
-  if (stepCanPrev && !stepCanNext) {
-    return { command: 'coverity.traceStepRelative', args: [findingId, eventIndex, -1] };
-  }
-  if (stepCanNext && !stepCanPrev) {
-    return { command: 'coverity.traceStepRelative', args: [findingId, eventIndex, 1] };
-  }
-  return { command: 'coverity.stepStripMenu', args: [findingId, eventIndex] };
-}
-
-/**
- * Four CodeLens items: VS Code adds ` | ` only between them (not inside groups).
  * @param {object} session
  * @param {import('vscode').TextDocument} document
  * @param {number} line
@@ -90,28 +45,62 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   const stepNum = eventIndex + 1;
   const stepTotal = finding.events.length;
 
+  const ruleCanPrev = k > 1 && ruleIndex > 0;
+  const ruleCanNext = k > 1 && ruleIndex < k - 1;
+  const stepCanPrev = stepNum > 1;
+  const stepCanNext = stepNum < stepTotal;
+
   if (k === 1) {
     pushLens(lenses, range, '← rule 1/1 →');
   } else {
-    const ruleCmd = ruleStripCommand(session, document.uri, line);
     pushLens(
       lenses,
       range,
-      `← rule ${ruleNum}/${k} →`,
-      ruleCmd?.command,
-      ruleCmd?.args
+      '← rule',
+      ruleCanPrev ? 'coverity.cycleFindingAtLine' : undefined,
+      ruleCanPrev ? [uriStr, line, -1] : undefined
+    );
+    pushLens(
+      lenses,
+      range,
+      `${ruleNum}/${k}`,
+      'coverity.pickFindingAtLine',
+      [uriStr, line]
+    );
+    pushLens(
+      lenses,
+      range,
+      'rule →',
+      ruleCanNext ? 'coverity.cycleFindingAtLine' : undefined,
+      ruleCanNext ? [uriStr, line, 1] : undefined
     );
   }
 
-  pushLens(lenses, range, `: ${truncateLabel(findingDisplayName(finding))}`);
+  pushLens(lenses, range, ':');
+  pushLens(lenses, range, truncateLabel(findingDisplayName(finding)));
+  pushLens(lenses, range, '|');
 
   if (stepTotal === 1) {
     pushLens(lenses, range, '← step 1/1 →');
   } else {
-    const stepCmd = stepStripCommand(stepNum, stepTotal, finding.id, eventIndex);
-    pushLens(lenses, range, `← step ${stepNum}/${stepTotal} →`, stepCmd?.command, stepCmd?.args);
+    pushLens(
+      lenses,
+      range,
+      '← step',
+      stepCanPrev ? 'coverity.traceStepRelative' : undefined,
+      stepCanPrev ? [finding.id, eventIndex, -1] : undefined
+    );
+    pushLens(lenses, range, `${stepNum}/${stepTotal}`);
+    pushLens(
+      lenses,
+      range,
+      'step →',
+      stepCanNext ? 'coverity.traceStepRelative' : undefined,
+      stepCanNext ? [finding.id, eventIndex, 1] : undefined
+    );
   }
 
+  pushLens(lenses, range, '|');
   pushLens(lenses, range, 'Full Trace', 'coverity.showTracePeek', [finding.id, eventIndex]);
 }
 
