@@ -3,9 +3,9 @@
 const vscode = require('vscode');
 const { findingDisplayName } = require('./findingsAtLine');
 
-/** Filled / hollow step arrow affordances in CodeLens. */
-const STEP_DOT_ON = '\u25CF';
-const STEP_DOT_OFF = '\u25CB';
+/** Filled / hollow arrow affordances in CodeLens (←● / ●→). */
+const DOT_ON = '\u25CF';
+const DOT_OFF = '\u25CB';
 
 /** @param {string} text @param {number} max */
 function truncateLabel(text, max = 52) {
@@ -57,38 +57,32 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   const ruleTitle = `: ${truncateLabel(findingDisplayName(finding))}`;
 
   if (k === 1) {
-    pushLens(lenses, range, `← rule 1/1 → ${ruleTitle}`);
+    pushLens(lenses, range, `←${DOT_OFF} rule 1/1 ${DOT_OFF}→${ruleTitle}`);
   } else {
     pushLens(
       lenses,
       range,
-      '← rule',
+      `←${ruleCanPrev ? DOT_ON : DOT_OFF}`,
       ruleCanPrev ? 'coverity.cycleFindingAtLine' : undefined,
       ruleCanPrev ? [uriStr, line, -1] : undefined
     );
+    pushLens(lenses, range, `rule ${ruleNum}/${k}`, 'coverity.pickFindingAtLine', [uriStr, line]);
     pushLens(
       lenses,
       range,
-      `${ruleNum}/${k}`,
-      'coverity.pickFindingAtLine',
-      [uriStr, line]
-    );
-    pushLens(
-      lenses,
-      range,
-      `→ ${ruleTitle}`,
+      `${ruleCanNext ? DOT_ON : DOT_OFF}→${ruleTitle}`,
       ruleCanNext ? 'coverity.cycleFindingAtLine' : undefined,
       ruleCanNext ? [uriStr, line, 1] : undefined
     );
   }
 
   if (stepTotal === 1) {
-    pushLens(lenses, range, `←${STEP_DOT_OFF} step 1/1 ${STEP_DOT_OFF}→`);
+    pushLens(lenses, range, `←${DOT_OFF} step 1/1 ${DOT_OFF}→`);
   } else {
     pushLens(
       lenses,
       range,
-      `←${stepCanPrev ? STEP_DOT_ON : STEP_DOT_OFF}`,
+      `←${stepCanPrev ? DOT_ON : DOT_OFF}`,
       stepCanPrev ? 'coverity.traceStepRelative' : undefined,
       stepCanPrev ? [finding.id, eventIndex, -1] : undefined
     );
@@ -96,7 +90,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
     pushLens(
       lenses,
       range,
-      `${stepCanNext ? STEP_DOT_ON : STEP_DOT_OFF}→`,
+      `${stepCanNext ? DOT_ON : DOT_OFF}→`,
       stepCanNext ? 'coverity.traceStepRelative' : undefined,
       stepCanNext ? [finding.id, eventIndex, 1] : undefined
     );
