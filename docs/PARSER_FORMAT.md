@@ -39,6 +39,13 @@ interstellar/lib/log/log_format.c:7:5:
   1. misra_c_2012_rule_21_6_violation: Use of library function "printf".
 ```
 
+**Multiple findings, one line** (extension fixtures):
+
+| Source line | CIDs | Scenario |
+|-------------|------|----------|
+| `interstellar/lib/log/log_format.c:7:5` | 90002, 90008 | Same line **and column** |
+| `interstellar/src/multi_finding_line.c:14` | 90200, 90201, 90202 | Same line, **different columns** (5, 20, 35) |
+
 ---
 
 ## 2. Line kinds

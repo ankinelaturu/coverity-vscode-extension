@@ -1,4 +1,4 @@
-Detected 11 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
+Detected 14 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
 
 interstellar/src/nav_reader.c:13:9: CID 90001 (#1 of 1):
   Type: Explicit null dereferenced (FORWARD_NULL)
@@ -33,6 +33,32 @@ interstellar/lib/log/log_format.c:7:5:
   1. printf_format: Format specifier may not match argument.
 interstellar/lib/log/log_format.c:7:5:
   2. format_string: printf("SYS:%s:READY", subsystem);
+
+interstellar/src/multi_finding_line.c:14:5: CID 90200 (#1 of 1):
+  Type: Explicit null dereferenced (FORWARD_NULL)
+  Classification: Unclassified
+  Severity: Unspecified
+
+interstellar/src/multi_finding_line.c:11:5:
+  1. null_check: "status" may be null.
+interstellar/src/multi_finding_line.c:14:5:
+  2. var_deref_op: Dereferencing pointer "status".
+
+interstellar/src/multi_finding_line.c:14:20: CID 90201 (#1 of 1):
+  Type: MISRA C-2012 Arrays (MISRA C-2012 Rule 18.1, Required)
+
+interstellar/src/multi_finding_line.c:14:20:
+  1. misra_c_2012_rule_18_1_violation: Array indexing may be out of bounds.
+
+interstellar/src/multi_finding_line.c:14:35: CID 90202 (#1 of 1):
+  Type: Printf format string (PRINTF_ARGS)
+  Classification: Unclassified
+  Severity: Unspecified
+
+interstellar/src/multi_finding_line.c:14:35:
+  1. printf_format: Format specifier may not match argument.
+interstellar/src/multi_finding_line.c:14:35:
+  2. format_string: printf("%d %s", tag, idx);
 
 interstellar/src/buffer_ops.c:22:9: CID 90003 (#1 of 1):
   Type: MISRA C-2012 Arrays (MISRA C-2012 Rule 18.1, Required)
