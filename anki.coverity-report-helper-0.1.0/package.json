@@ -213,6 +213,11 @@
           "default": true,
           "description": "Use SVG timeline table in hover; when false, use a plain Markdown step list."
         },
+        "coverity.fullTraceFollowActive": {
+          "type": "boolean",
+          "default": true,
+          "description": "After Full Trace is opened, refresh the sidebar when you change the active finding or trace step (CodeLens, hover, prev/next)."
+        },
         "coverity.codeLensEnabled": {
           "type": "boolean",
           "default": true

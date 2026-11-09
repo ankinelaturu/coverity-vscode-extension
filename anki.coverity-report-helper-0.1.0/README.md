@@ -51,7 +51,7 @@ After loading a report:
 
 **Nested trace steps** — Reports may use dotted step numbers (`1.`, `1.1.`, `2.1.`). See fixture **CID 90100** / `nested_demo.c`; Full Trace indents sub-steps and shows labels like **Step 1.1**.
 
-**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each step shows ±2 lines of context; click a step header to open that location in the **main editor**. Trace stays in the sidebar.
+**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each step shows ±2 lines of context; click a step header to open that location in the **main editor**. Trace stays in the sidebar. After you open it once, the panel **follows** the active finding and step (CodeLens rule/step controls, prev/next, hover) unless you turn off `coverity.fullTraceFollowActive`.
 
 **Problems:** one **Warning** per finding on the **last trace step**; all steps (including the main line) are listed in **related information** on that diagnostic. Source is `Coverity Report`. Optional trace-step wavy underline: `coverity.traceStepMarkEnabled` (not on the main step line).
 

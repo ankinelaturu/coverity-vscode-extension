@@ -16,6 +16,12 @@ function emptyTraceViewHtml() {
 <body><p><strong>Full Trace</strong></p><p>Load a Coverity report, then use Full Trace from the editor hover, light bulb, or Command Palette.</p></body></html>`;
 }
 
+const FOLLOW_DEBOUNCE_MS = 80;
+
+function fullTraceFollowActive() {
+  return vscode.workspace.getConfiguration('coverity').get('fullTraceFollowActive', true);
+}
+
 class FullTraceViewProvider {
   /**
    * @param {object} session
@@ -26,6 +32,94 @@ class FullTraceViewProvider {
     this.view = undefined;
     /** @type {string | null} */
     this.pendingHtml = null;
+    /** User opened a trace (not the empty placeholder). */
+    this.engaged = false;
+    /** @type {string | null} */
+    this.renderedFindingId = null;
+    /** @type {number | null} */
+    this.renderedEventIndex = null;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this._followTimer = null;
+    this._followInFlight = false;
+  }
+
+  resetToEmpty() {
+    this.engaged = false;
+    this.renderedFindingId = null;
+    this.renderedEventIndex = null;
+    const html = emptyTraceViewHtml();
+    if (this.view) {
+      this.view.webview.html = html;
+    } else {
+      this.pendingHtml = html;
+    }
+  }
+
+  /**
+   * @param {string} findingId
+   * @param {number} eventIndex
+   */
+  noteRendered(findingId, eventIndex) {
+    this.engaged = true;
+    this.renderedFindingId = findingId;
+    this.renderedEventIndex = eventIndex;
+  }
+
+  handleSessionChange() {
+    if (!fullTraceFollowActive() || !this.engaged) {
+      return;
+    }
+    if (!this.session.hasReport()) {
+      this.resetToEmpty();
+      return;
+    }
+    const findingId = this.session.activeFindingId;
+    if (!findingId) {
+      return;
+    }
+    const eventIndex = this.session.activeEventIndex;
+    if (findingId === this.renderedFindingId && eventIndex === this.renderedEventIndex) {
+      return;
+    }
+    if (this._followTimer) {
+      clearTimeout(this._followTimer);
+    }
+    this._followTimer = setTimeout(() => {
+      this._followTimer = null;
+      void this.refreshFromActiveFinding();
+    }, FOLLOW_DEBOUNCE_MS);
+  }
+
+  async refreshFromActiveFinding() {
+    if (!fullTraceFollowActive() || !this.engaged || !this.session.hasReport()) {
+      return;
+    }
+    const findingId = this.session.activeFindingId;
+    if (!findingId) {
+      return;
+    }
+    const finding = this.session.getFinding(findingId);
+    if (!finding) {
+      this.resetToEmpty();
+      return;
+    }
+    const eventIndex = Math.max(
+      0,
+      Math.min(finding.events.length - 1, this.session.activeEventIndex ?? 0)
+    );
+    if (findingId === this.renderedFindingId && eventIndex === this.renderedEventIndex) {
+      return;
+    }
+    if (this._followInFlight) {
+      return;
+    }
+    this._followInFlight = true;
+    try {
+      const html = await buildTracePeekHtml(this.session, finding, eventIndex);
+      await this.setHtml(html, findingId, eventIndex, { focus: false });
+    } finally {
+      this._followInFlight = false;
+    }
   }
 
   /**
@@ -50,7 +144,8 @@ class FullTraceViewProvider {
       await this.session.navigateToStep(findingId, eventIndex);
       const finding = this.session.getFinding(findingId);
       if (finding) {
-        await this.setHtml(await buildTracePeekHtml(this.session, finding, eventIndex));
+        const html = await buildTracePeekHtml(this.session, finding, eventIndex);
+        await this.setHtml(html, findingId, eventIndex, { focus: false });
       }
     });
 
@@ -66,11 +161,22 @@ class FullTraceViewProvider {
     }
   }
 
-  /** @param {string} html */
-  async setHtml(html) {
+  /**
+   * @param {string} html
+   * @param {string} [findingId]
+   * @param {number} [eventIndex]
+   * @param {{ focus?: boolean }} [opts]
+   */
+  async setHtml(html, findingId, eventIndex, opts = {}) {
+    const focus = opts.focus !== false;
+    if (typeof findingId === 'string' && Number.isFinite(eventIndex)) {
+      this.noteRendered(findingId, eventIndex);
+    }
     if (this.view) {
       this.view.webview.html = html;
-      this.view.show?.(true);
+      if (focus) {
+        this.view.show?.(true);
+      }
     } else {
       this.pendingHtml = html;
     }
@@ -84,6 +190,7 @@ class FullTraceViewProvider {
 function registerFullTraceView(context, session) {
   viewProvider = new FullTraceViewProvider(session);
   context.subscriptions.push(
+    session.onDidChange(() => viewProvider.handleSessionChange()),
     vscode.window.registerWebviewViewProvider(FULL_TRACE_VIEW_ID, viewProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     })
@@ -203,7 +310,7 @@ async function showTracePeek(session, findingId, eventIndex) {
     return;
   }
 
-  await viewProvider.setHtml(html);
+  await viewProvider.setHtml(html, finding.id, ei);
   try {
     await vscode.commands.executeCommand(`${FULL_TRACE_VIEW_ID}.focus`);
   } catch {
