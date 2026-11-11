@@ -3,7 +3,7 @@
 const vscode = require('vscode');
 
 /**
- * Status bar summary after a report is loaded (finding + warning counts).
+ * Status bar summary after a report is loaded (issue + warning counts).
  */
 function registerReportStatusBar(session) {
   const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -17,7 +17,7 @@ function registerReportStatusBar(session) {
     }
     const n = session.parsed.findings.length;
     const w = session.parsed.warnings.length;
-    item.text = `$(shield) Coverity: ${n} finding${n === 1 ? '' : 's'}`;
+    item.text = `$(shield) Coverity: ${n} issue${n === 1 ? '' : 's'}`;
     const typeFilter = session.getProblemsCheckerFilter();
     if (typeFilter) {
       item.text += ` · $(filter) ${typeFilter}`;

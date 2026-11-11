@@ -16,6 +16,8 @@ const { applyNavigationTarget, rememberLineFinding } = require('../navigation/ed
 
 const DIAGNOSTIC_SOURCE = 'Coverity Report';
 
+/** Session state: `findings` / `findingId` in code = Coverity issues; `events` / `eventIndex` = path events. */
+
 class ReportSession {
   /**
    * @param {vscode.ExtensionContext} context
@@ -482,7 +484,7 @@ class ReportSession {
   }
 
   /**
-   * One Problem per finding: range + message on the last trace step. Earlier steps + main step are
+   * One Problem per issue: range + message on the last event. Earlier events are
    * relatedInformation in event order (0..n-1), not sorted by line number.
    */
   collectDiagnostics() {
@@ -507,7 +509,7 @@ class ReportSession {
         continue;
       }
 
-      const title = finding.typeTitle || finding.checkerId || 'Coverity finding';
+      const title = finding.typeTitle || finding.checkerId || 'Coverity issue';
       const mainEv = finding.events[lastEi];
       const hint = describe(finding.checkerId, mainEv.label);
       const core = `[${finding.checkerId || 'Unknown'}] ${mainEv.label}${hint ? ` — ${hint}` : ''}: ${mainEv.rawPayload || title}`.trim();
@@ -525,7 +527,7 @@ class ReportSession {
           continue;
         }
         const stepHint = describe(finding.checkerId, ev.label);
-        const stepCore = `[${ei + 1}/${n}] ${ev.label}${stepHint ? ` — ${stepHint}` : ''}: ${ev.rawPayload || title}`.trim();
+        const stepCore = `Event ${ei + 1}/${n}: ${ev.label}${stepHint ? ` — ${stepHint}` : ''}: ${ev.rawPayload || title}`.trim();
         related.push(new vscode.DiagnosticRelatedInformation(new vscode.Location(t.uri, t.range), stepCore));
       }
       diag.relatedInformation = related;

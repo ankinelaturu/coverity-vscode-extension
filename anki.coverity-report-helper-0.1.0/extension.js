@@ -146,12 +146,12 @@ async function pickFindingAtLine(session, uriStr, line) {
       const checker = finding.checkerId || 'Unknown';
       return {
         label: findingDisplayName(finding),
-        description: `${checker} — step ${eventIndex + 1} of ${finding.events.length} on this line`,
+        description: `${checker} — event ${eventIndex + 1} of ${finding.events.length} on this line`,
         findingId: finding.id,
         eventIndex,
       };
     }),
-    { title: 'Coverity rules at this line', placeHolder: 'Select finding' }
+    { title: 'Coverity issues at this line', placeHolder: 'Select issue' }
   );
   if (picked) {
     session.activateFindingAtLine(uri, line, picked.findingId, picked.eventIndex);
@@ -207,15 +207,15 @@ async function pickTraceStep(session, findingId, eventIndex) {
       const { location, description } = traceStepPickMeta(session, findingId, i, ev);
       const current = i === ei;
       return {
-        label: `${current ? '$(check) ' : ''}Step ${i + 1} of ${n}`,
+        label: `${current ? '$(check) ' : ''}Event ${i + 1} of ${n}`,
         description: description || undefined,
         detail: location || undefined,
         stepIndex: i,
       };
     }),
     {
-      title: 'Coverity trace steps',
-      placeHolder: `Current: step ${ei + 1} of ${n}`,
+      title: 'Coverity events',
+      placeHolder: `Current: event ${ei + 1} of ${n}`,
     }
   );
   if (picked && typeof picked.stepIndex === 'number') {
@@ -235,7 +235,7 @@ function registerCommands(context, session) {
   reg('coverity.navigateToStep', (findingId, eventIndex) => session.navigateToStep(findingId, eventIndex));
   reg('coverity.setActiveFindingStep', (findingId, eventIndex) => {
     session.setActive(findingId, eventIndex);
-    vscode.window.showInformationMessage(`Coverity: active trace step ${eventIndex + 1} (${findingId}).`);
+    vscode.window.showInformationMessage(`Coverity: active event ${eventIndex + 1} (${findingId}).`);
   });
   reg('coverity.traceStepRelative', (findingId, eventIndex, delta) =>
     session.navigateRelativeFrom(findingId, eventIndex, delta)
@@ -293,7 +293,7 @@ async function loadFromUri(session, uri) {
   }
   logParseResult(parsed);
   vscode.window.showInformationMessage(
-    `Coverity: loaded ${parsed.findings.length} finding(s). Use Problems panel and Explorer badges on source files.`
+    `Coverity: loaded ${parsed.findings.length} issue(s). Use Problems panel and Explorer badges on source files.`
   );
 }
 
@@ -313,7 +313,7 @@ function logParseResult(parsed) {
     return;
   }
   outputChannel.clear();
-  outputChannel.appendLine(`Parsed ${parsed.findings.length} finding(s), ${parsed.warnings.length} warning(s).`);
+  outputChannel.appendLine(`Parsed ${parsed.findings.length} issue(s), ${parsed.warnings.length} warning(s).`);
   for (const w of parsed.warnings) {
     outputChannel.appendLine(`L${w.line}: ${w.message}`);
   }

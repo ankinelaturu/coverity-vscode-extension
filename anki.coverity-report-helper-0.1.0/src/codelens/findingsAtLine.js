@@ -1,5 +1,7 @@
 'use strict';
 
+/** Coverity issue helpers. `finding` in APIs = one report issue (CID block). */
+
 /**
  * @param {object} finding
  * @returns {string}

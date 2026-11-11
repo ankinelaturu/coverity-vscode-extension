@@ -293,7 +293,7 @@ async function showTracePeek(session, findingId, eventIndex) {
 
   const target = resolveTracePeekTarget(session, findingId, eventIndex);
   if (!target) {
-    vscode.window.showWarningMessage('Coverity: no finding selected for trace peek.');
+    vscode.window.showWarningMessage('Coverity: no issue selected for Full Trace.');
     return;
   }
 

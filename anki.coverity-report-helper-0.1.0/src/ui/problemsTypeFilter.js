@@ -15,7 +15,7 @@ async function pickProblemsTypeFilter(session) {
   /** @type {vscode.QuickPickItem[]} */
   const items = [
     {
-      label: 'All finding types',
+      label: 'All checkers',
       description: active ? '' : '$(check) current',
       detail: 'Show every Coverity diagnostic in Problems (does not change compiler/LSP issues).',
       picked: !active,
@@ -31,7 +31,7 @@ async function pickProblemsTypeFilter(session) {
     const isActive = active === checkerId;
     items.push({
       label: checkerId,
-      description: isActive ? '$(check) current' : `${count} finding${count === 1 ? '' : 's'}`,
+      description: isActive ? '$(check) current' : `${count} issue${count === 1 ? '' : 's'}`,
       detail: title || undefined,
       picked: isActive,
     });
@@ -45,7 +45,7 @@ async function pickProblemsTypeFilter(session) {
   if (picked === undefined) {
     return active;
   }
-  if (picked.label === 'All finding types') {
+  if (picked.label === 'All checkers') {
     return null;
   }
   return picked.label;

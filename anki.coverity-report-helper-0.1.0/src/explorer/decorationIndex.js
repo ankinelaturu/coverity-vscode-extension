@@ -4,8 +4,8 @@ const path = require('path');
 const vscode = require('vscode');
 
 /**
- * Precomputed Coverity finding data per resolved file URI for Explorer decorations.
- * Folder summaries are derived by path prefix (unique findings under that folder).
+ * Precomputed Coverity issue data per resolved file URI for Explorer decorations.
+ * Folder summaries are derived by path prefix (unique issues under that folder).
  */
 
 /**
@@ -154,7 +154,7 @@ function buildTooltip(summary, ctx) {
   const { findingById, isActive, isFolder } = ctx;
   const n = summary.count;
   const scope = isFolder ? ' (folder incl. subfolders)' : '';
-  const lines = [`Coverity: ${n} finding${n === 1 ? '' : 's'}${scope}`];
+  const lines = [`Coverity: ${n} issue${n === 1 ? '' : 's'}${scope}`];
   if (isActive) {
     lines.push('Active editor file');
   }
@@ -175,7 +175,7 @@ function buildTooltip(summary, ctx) {
       lines.push(formatFindingTooltipLine(finding));
     }
     if (findings.length > TOOLTIP_FINDING_LIMIT) {
-      lines.push(`  • … and ${findings.length - TOOLTIP_FINDING_LIMIT} more finding(s)`);
+      lines.push(`  • … and ${findings.length - TOOLTIP_FINDING_LIMIT} more issue(s)`);
     }
   }
 

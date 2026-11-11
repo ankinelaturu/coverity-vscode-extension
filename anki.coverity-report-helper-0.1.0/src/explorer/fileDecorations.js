@@ -14,7 +14,7 @@ const {
  * Explorer file/folder decorations via FileDecorationProvider.
  *
  * Note: VS Code only supports a short text badge (1–2 chars) and theme colors — not custom PNG/SVG
- * icons in the file tree. The "duck" style shows 🦆1–🦆9 or 🦆+ for 10+ unique findings.
+ * icons in the file tree. The "duck" style shows 🦆1–🦆9 or 🦆+ for 10+ unique issues.
  */
 function registerFileDecorations(session) {
   const emitter = new vscode.EventEmitter();
