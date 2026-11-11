@@ -37,6 +37,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   }
   ```
 * **How to Fix:** Ensure all files build with zero syntax, structural, or language constraint errors across all target build configurations.
+  ```c
+  int process(void) {
+      int x = 10; /* Compliant: valid syntax, compiles cleanly */
+      return x;
+  }
+  ```
 
 ---
 
@@ -346,6 +352,16 @@ Directives are guidelines where compliance cannot be determined by static analys
   void nested(void) { {{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{ int x = 0; }}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
   ```
 * **How to Fix:** Restructure complex nested code blocks to adhere to ISO C bounds and clean syntax.
+  ```c
+  static void inner(void) {
+      int x = 0;
+      (void)x;
+  }
+
+  void nested(void) {
+      inner(); /* Compliant: nesting kept within ISO C translation limits */
+  }
+  ```
 
 ---
 
@@ -426,8 +442,14 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   typedef uint32_t UnusedType; /* Non-compliant if never used */
+  typedef uint16_t Speed_t;
+  Speed_t speed = 0U;
   ```
 * **How to Fix:** Remove unused `typedef` declarations from headers and source files.
+  ```c
+  typedef uint16_t Speed_t; /* Compliant: typedef is used */
+  Speed_t speed = 0U;
+  ```
 
 ---
 
@@ -436,8 +458,14 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   enum UnusedTag { ALPHA, BETA }; /* Non-compliant if tag is unused */
+  enum Color { RED, GREEN, BLUE };
+  enum Color c = RED;
   ```
 * **How to Fix:** Delete unused tag definitions.
+  ```c
+  enum Color { RED, GREEN, BLUE }; /* Compliant: tag is referenced */
+  enum Color c = RED;
+  ```
 
 ---
 
@@ -446,8 +474,14 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   #define UNUSED_TIMEOUT (500U) /* Non-compliant if unused */
+  #define RETRY_COUNT (3U)
+  uint32_t retries = RETRY_COUNT;
   ```
 * **How to Fix:** Remove unused macro definitions.
+  ```c
+  #define RETRY_COUNT (3U) /* Compliant: macro is expanded */
+  uint32_t retries = RETRY_COUNT;
+  ```
 
 ---
 
@@ -461,6 +495,11 @@ Directives are guidelines where compliance cannot be determined by static analys
   }
   ```
 * **How to Fix:** Delete unused labels.
+  ```c
+  void test(void) {
+      return; /* Compliant: unused label removed */
+  }
+  ```
 
 ---
 
@@ -578,6 +617,14 @@ Directives are guidelines where compliance cannot be determined by static analys
   }
   ```
 * **How to Fix:** Ensure distinct variable names within a scope.
+  ```c
+  void process(void) {
+      int input_count = 0;
+      int output_count = 1; /* Compliant: unique identifiers */
+      (void)input_count;
+      (void)output_count;
+  }
+  ```
 
 ---
 
@@ -609,7 +656,11 @@ Directives are guidelines where compliance cannot be determined by static analys
   #define SENSOR_READING_MAX_LIMIT (100U)
   #define SENSOR_READING_MAX_LIMIT (200U) /* Non-compliant: duplicate macro definition */
   ```
-* **How to Fix:** Use distinct macro names or `#undef` before redefining.
+* **How to Fix:** Use distinct macro names.
+  ```c
+  #define SENSOR_READING_SOFT_LIMIT (100U)
+  #define SENSOR_READING_HARD_LIMIT (200U) /* Compliant: distinct macro names */
+  ```
 
 ---
 
@@ -621,6 +672,10 @@ Directives are guidelines where compliance cannot be determined by static analys
   int STATUS_OK = 0; /* Non-compliant: identifier collides with macro name */
   ```
 * **How to Fix:** Distinguish variable names from macro names using naming conventions (e.g., ALL_CAPS for macros).
+  ```c
+  #define STATUS_OK (0U)
+  int status_ok = (int)STATUS_OK; /* Compliant: identifier does not collide with macro */
+  ```
 
 ---
 
@@ -632,6 +687,10 @@ Directives are guidelines where compliance cannot be determined by static analys
   typedef uint16_t speed_t; /* Non-compliant: duplicate typedef name */
   ```
 * **How to Fix:** Avoid redefining existing `typedef` identifiers.
+  ```c
+  typedef uint32_t speed_t;
+  typedef uint16_t rpm_t; /* Compliant: unique typedef names */
+  ```
 
 ---
 
@@ -643,6 +702,10 @@ Directives are guidelines where compliance cannot be determined by static analys
   union Node { int data_int; float data_flt; }; /* Non-compliant: duplicate tag 'Node' */
   ```
 * **How to Fix:** Use distinct tag names for separate data structures.
+  ```c
+  struct Node { int data; };
+  union NodeData { int data_int; float data_flt; }; /* Compliant: unique tags */
+  ```
 
 ---
 
@@ -654,6 +717,13 @@ Directives are guidelines where compliance cannot be determined by static analys
   /* file2.c */ int status = 1; /* Non-compliant: global identifier collision */
   ```
 * **How to Fix:** Rename variables or apply `static` storage specifiers if linkage is internal to a single file.
+  ```c
+  /* file1.c */
+  static int file1_status = 0; /* Compliant: internal linkage */
+
+  /* file2.c */
+  static int file2_status = 1; /* Compliant: no external collision */
+  ```
 
 ---
 
@@ -801,13 +871,23 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** All declarations of an object or function must use identical parameter names, types, and qualifiers across all files.
 * **Non-compliant Example:**
   ```c
-  /* Header.h */  void update(int value);
-  /* Source.c */  void update(int speed) { /* ... */ } /* Non-compliant: parameter name mismatch */
+  /* Header.h */
+  void update(int value);
+
+  /* Source.c */
+  void update(int speed) { /* Non-compliant: parameter name mismatch */
+      (void)speed;
+  }
   ```
 * **How to Fix:** Use exact matching names across declarations and definitions.
   ```c
-  /* Header.h */  void update(int value);
-  /* Source.c */  void update(int value) { /* ... */ } /* Compliant */
+  /* Header.h */
+  void update(int value);
+
+  /* Source.c */
+  void update(int value) { /* Compliant: identical parameter name and type */
+      (void)value;
+  }
   ```
 
 ---
@@ -834,7 +914,24 @@ Directives are guidelines where compliance cannot be determined by static analys
   /* file1.c */ extern int mode;
   /* file2.c */ extern int mode; /* Non-compliant: repeated extern declarations across C files */
   ```
-* **How to Fix:** Declare `extern int mode;` in one central header file and `#include` it.
+* **How to Fix:** Declare the object in one central header file and `#include` it.
+  ```c
+  /* mode.h */
+  #ifndef MODE_H
+  #define MODE_H
+  extern int mode; /* Compliant: single declaration in one header */
+  #endif
+
+  /* file1.c */
+  #include "mode.h"
+  int mode = 0;
+
+  /* file2.c */
+  #include "mode.h"
+  void use_mode(void) {
+      mode = 1;
+  }
+  ```
 
 ---
 
@@ -846,6 +943,19 @@ Directives are guidelines where compliance cannot be determined by static analys
   /* file2.c */ int system_state = 0; /* Non-compliant: duplicate external definition */
   ```
 * **How to Fix:** Define the variable once in a single `.c` file and reference it via header `extern` declarations elsewhere.
+  ```c
+  /* system_state.h */
+  extern int system_state;
+
+  /* system_state.c */
+  int system_state = 0; /* Compliant: single definition */
+
+  /* other.c */
+  #include "system_state.h"
+  void set_state(int s) {
+      system_state = s;
+  }
+  ```
 
 ---
 
@@ -934,6 +1044,13 @@ Directives are guidelines where compliance cannot be determined by static analys
   };
   ```
 * **How to Fix:** Assign unique values to each enum element.
+  ```c
+  enum Mode {
+      MODE_A = 1,
+      MODE_B = 2,
+      MODE_C = 3   /* Compliant: unique values */
+  };
+  ```
 
 ---
 
@@ -1025,6 +1142,9 @@ Directives are guidelines where compliance cannot be determined by static analys
   int arr[3] = { [0] = 1, [0] = 2, 3 }; /* Non-compliant: index 0 initialized twice */
   ```
 * **How to Fix:** Ensure each element index is initialized once.
+  ```c
+  int arr[3] = { [0] = 1, [1] = 2, [2] = 3 }; /* Compliant: each element once */
+  ```
 
 ---
 
@@ -1067,7 +1187,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   char c = 'a';
   char next = c + 3; /* Non-compliant: character arithmetic */
   ```
-* **How to Fix:** Cast character to integer or use explicit character conversions.
+* **How to Fix:** Perform arithmetic on an explicit integer conversion of the character value.
+  ```c
+  char c = 'a';
+  int32_t offset = 3;
+  char next = (char)((int32_t)c + offset); /* Compliant: explicit integer arithmetic */
+  ```
 
 ---
 
@@ -1106,9 +1231,23 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   float f = 1.5f;
+  enum Mode { MODE_OFF = 0, MODE_ON = 1 };
   enum Mode m = (enum Mode)f; /* Non-compliant */
   ```
 * **How to Fix:** Convert through intermediate integer types or explicit mapping logic.
+  ```c
+  float f = 1.5f;
+  enum Mode { MODE_OFF = 0, MODE_ON = 1 };
+  int32_t mode_id = (int32_t)f;
+  enum Mode m;
+
+  if (mode_id == 0) {
+      m = MODE_OFF;
+  } else {
+      m = MODE_ON; /* Compliant: explicit mapping instead of float-to-enum cast */
+  }
+  (void)m;
+  ```
 
 ---
 
@@ -1136,7 +1275,13 @@ Directives are guidelines where compliance cannot be determined by static analys
   uint32_t c = 100U;
   uint32_t res = (a + b) + c; /* Non-compliant implicit conversion inside composite */
   ```
-* **How to Fix:** Explicitly cast operands to wider types.
+* **How to Fix:** Explicitly cast operands to wider types before the composite operation.
+  ```c
+  uint16_t a = 10U;
+  uint16_t b = 20U;
+  uint32_t c = 100U;
+  uint32_t res = ((uint32_t)a + (uint32_t)b) + c; /* Compliant: explicit wider casts */
+  ```
 
 ---
 
@@ -1167,6 +1312,13 @@ Directives are guidelines where compliance cannot be determined by static analys
   void *vp = (void *)fp; /* Non-compliant: function pointer cast to void pointer */
   ```
 * **How to Fix:** Keep function pointers distinct; do not cast them to generic object pointers.
+  ```c
+  void handler(void) {
+  }
+
+  void (*fp)(void) = handler; /* Compliant: assign only compatible function pointers */
+  fp();
+  ```
 
 ---
 
@@ -1177,7 +1329,14 @@ Directives are guidelines where compliance cannot be determined by static analys
   struct Opaque *p;
   uint32_t addr = (uint32_t)p; /* Non-compliant */
   ```
-* **How to Fix:** Avoid type casting opaque structure handles.
+* **How to Fix:** Avoid type casting opaque structure handles; pass and store them as the opaque pointer type.
+  ```c
+  struct Opaque;
+
+  void use_handle(struct Opaque *p) {
+      process_opaque(p); /* Compliant: opaque pointer used without conversion */
+  }
+  ```
 
 ---
 
@@ -1204,7 +1363,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   int x = 10;
   uint32_t addr = (uint32_t)&x; /* Non-compliant pointer to int conversion */
   ```
-* **How to Fix:** Avoid treating pointers as integers in general software logic.
+* **How to Fix:** Avoid treating pointers as integers in general software logic; keep pointer types intact.
+  ```c
+  int x = 10;
+  int *px = &x; /* Compliant: pointer retained as pointer type */
+  *px = 20;
+  ```
 
 ---
 
@@ -1216,6 +1380,10 @@ Directives are guidelines where compliance cannot be determined by static analys
   uint32_t *iptr = (uint32_t *)vptr; /* Non-compliant */
   ```
 * **How to Fix:** Pass typed object pointers directly whenever possible.
+  ```c
+  uint32_t *get_buffer(void);
+  uint32_t *iptr = get_buffer(); /* Compliant: typed pointer, no void* cast */
+  ```
 
 ---
 
@@ -1225,7 +1393,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   ```c
   void *vp = (void *)0x1000U; /* Non-compliant */
   ```
-* **How to Fix:** Use uintptr_t or dedicated memory mapping macros for hardware base addresses.
+* **How to Fix:** Do not convert between `void *` and arithmetic types. Keep pointers typed, or obtain addresses from typed APIs.
+  ```c
+  volatile uint32_t *get_reg_block(void);
+  volatile uint32_t *const reg = get_reg_block();
+  *reg = 0U; /* Compliant: typed pointer, no void-pointer/arithmetic conversion */
+  ```
 
 ---
 
@@ -1236,7 +1409,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   float f = 3.14f;
   uint32_t *p = (uint32_t *)&f; /* Non-compliant pointer reinterpret */
   ```
-* **How to Fix:** Use standard memcpy operations for bit pattern analysis.
+* **How to Fix:** Use standard `memcpy` operations for bit pattern analysis.
+  ```c
+  float f = 3.14f;
+  uint32_t bits = 0U;
+  (void)memcpy(&bits, &f, sizeof(bits)); /* Compliant: copy bits without invalid pointer cast */
+  ```
 
 ---
 
@@ -1249,7 +1427,17 @@ Directives are guidelines where compliance cannot be determined by static analys
       *mutable_p = 10;
   }
   ```
-* **How to Fix:** Retain `const` qualifiers throughout parameter chains.
+* **How to Fix:** Retain `const` qualifiers throughout parameter chains and mutate only non-const objects.
+  ```c
+  void write_data(int *p) {
+      *p = 10; /* Compliant: parameter is non-const when mutation is required */
+  }
+
+  void read_data(const int *p) {
+      int value = *p; /* Compliant: const retained for read-only access */
+      (void)value;
+  }
+  ```
 
 ---
 
@@ -1440,9 +1628,19 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** A `for` loop shall be well-formed with a single loop counter modified consistently in the loop clause.
 * **Non-compliant Example:**
   ```c
-  for (int i = 0; i < 10; i++, j--) { /* Non-compliant: modifying multiple loop counters */ }
+  int j = 10;
+  for (int i = 0; i < 10; i++, j--) { /* Non-compliant: modifying multiple loop counters */
+      (void)j;
+  }
   ```
 * **How to Fix:** Control a single loop variable in the `for` statement header.
+  ```c
+  int j = 10;
+  for (int i = 0; i < 10; i++) { /* Compliant: single loop counter */
+      j--;
+      (void)j;
+  }
+  ```
 
 ---
 
@@ -1451,9 +1649,17 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   uint32_t u = 5U;
-  if (u >= 0U) { /* Non-compliant: unsigned int is always >= 0 (invariant true) */ }
+  if (u >= 0U) { /* Non-compliant: unsigned int is always >= 0 (invariant true) */
+      process(u);
+  }
   ```
-* **How to Fix:** Remove redundant conditions.
+* **How to Fix:** Remove redundant conditions and keep only meaningful checks.
+  ```c
+  uint32_t u = 5U;
+  if (u > 0U) { /* Compliant: meaningful, non-invariant condition */
+      process(u);
+  }
+  ```
 
 ---
 
@@ -1479,13 +1685,24 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** The `goto` statement should not be used.
 * **Non-compliant Example:**
   ```c
-  void process(void) {
-      if (error) goto exit_label; /* Non-compliant */
+  void process(bool error) {
+      if (error) {
+          goto exit_label; /* Non-compliant */
+      }
+      do_work();
   exit_label:
       clean_up();
   }
   ```
 * **How to Fix:** Refactor using standard control structures (`if`/`else` or helper cleanup functions).
+  ```c
+  void process(bool error) {
+      if (!error) {
+          do_work();
+      }
+      clean_up(); /* Compliant: structured control flow, no goto */
+  }
+  ```
 
 ---
 
@@ -1493,18 +1710,47 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** `goto` shall only jump to a label declared later in the same function (no backward jumps).
 * **Non-compliant Example:**
   ```c
+  void retry_work(bool retry) {
   back_label:
       do_work();
-      if (retry) goto back_label; /* Non-compliant backward jump */
+      if (retry) {
+          goto back_label; /* Non-compliant backward jump */
+      }
+  }
   ```
 * **How to Fix:** Use a `while` or `do-while` loop for backward repetition.
+  ```c
+  void retry_work(bool retry) {
+      do {
+          do_work();
+      } while (retry); /* Compliant: loop replaces backward goto */
+  }
+  ```
 
 ---
 
 ### Rule 15.3 (Required)
 * **Explanation:** Any label referenced by `goto` shall be declared in the same block or an enclosing block.
-* **Non-compliant Example:** Jumping inside a nested code block from outside.
-* **How to Fix:** Restructure code flow to enter nested blocks normally.
+* **Non-compliant Example:**
+  ```c
+  void process(bool fail) {
+      if (fail) {
+          goto inner; /* Non-compliant: jump into a nested block */
+      }
+      {
+      inner:
+          clean_up();
+      }
+  }
+  ```
+* **How to Fix:** Restructure code flow to enter nested blocks normally, or place the label in an enclosing block.
+  ```c
+  void process(bool fail) {
+      if (fail) {
+          clean_up(); /* Compliant: enter nested logic via normal control flow */
+      }
+  }
+  ```
 
 ---
 
@@ -1513,11 +1759,20 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   for (int i = 0; i < 10; i++) {
-      if (cond1) break;
-      if (cond2) break; /* Non-compliant: multiple break statements */
+      if (cond1) {
+          break;
+      }
+      if (cond2) {
+          break; /* Non-compliant: multiple break statements */
+      }
   }
   ```
 * **How to Fix:** Combine loop termination conditions into the main loop control clause.
+  ```c
+  for (int i = 0; (i < 10) && (!cond1) && (!cond2); i++) {
+      do_step(i); /* Compliant: single termination path via loop condition */
+  }
+  ```
 
 ---
 
@@ -1563,14 +1818,21 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** All `if ... else if` chains shall be terminated with a final `else` clause (even if empty with a comment).
 * **Non-compliant Example:**
   ```c
-  if (x == 1) { /* ... */ }
-  else if (x == 2) { /* ... */ } /* Non-compliant: missing final else */
+  if (x == 1) {
+      handle_one();
+  } else if (x == 2) {
+      handle_two(); /* Non-compliant: missing final else */
+  }
   ```
 * **How to Fix:** Add a terminating `else` block.
   ```c
-  if (x == 1) { /* ... */ }
-  else if (x == 2) { /* ... */ }
-  else { /* Default safe fallback */ } /* Compliant */
+  if (x == 1) {
+      handle_one();
+  } else if (x == 2) {
+      handle_two();
+  } else {
+      handle_default(); /* Compliant: final else present */
+  }
   ```
 
 ---
@@ -1580,8 +1842,28 @@ Directives are guidelines where compliance cannot be determined by static analys
 ---
 
 ### Rule 16.1 (Required)
-* **Explanation:** All `switch` statements shall be well-formed syntax blocks.
-* **Non-compliant Example:** Misplaced labels or switch cases outside block scope.
+* **Explanation:** All `switch` statements shall be well-formed syntax blocks (syntax and structure required by the switch rules set).
+* **Non-compliant Example:**
+  ```c
+  switch (mode)
+      case 1: /* Non-compliant: missing braces / well-formed switch body */
+          run();
+          break;
+  ```
+* **How to Fix:** Use a braced `switch` body with properly formed clauses.
+  ```c
+  switch (mode) {
+      case 1:
+          run();
+          break;
+      case 2:
+          stop();
+          break;
+      default:
+          handle_unknown();
+          break; /* Compliant: well-formed switch */
+  }
+  ```
 
 ---
 
@@ -1591,11 +1873,23 @@ Directives are guidelines where compliance cannot be determined by static analys
   ```c
   switch (mark) {
       if (cond) {
-          case 1: break; /* Non-compliant: case inside nested if */
+          case 1: /* Non-compliant: case inside nested if */
+              break;
       }
   }
   ```
 * **How to Fix:** Place `case` labels cleanly at top level of `switch`.
+  ```c
+  switch (mark) {
+      case 1:
+          if (cond) {
+              handle();
+          }
+          break; /* Compliant: case at switch body level */
+      default:
+          break;
+  }
+  ```
 
 ---
 
@@ -1645,8 +1939,34 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 ### Rule 16.5 (Required)
 * **Explanation:** The `default` clause shall appear as either the first or last clause in a `switch` statement.
-* **Non-compliant Example:** Placing `default:` between `case 1:` and `case 2:`.
-* **How to Fix:** Move `default:` to the very end of the `switch` block.
+* **Non-compliant Example:**
+  ```c
+  switch (val) {
+      case 1:
+          handle_one();
+          break;
+      default: /* Non-compliant: default between case clauses */
+          handle_default();
+          break;
+      case 2:
+          handle_two();
+          break;
+  }
+  ```
+* **How to Fix:** Move `default:` to the very end (or very beginning) of the `switch` block.
+  ```c
+  switch (val) {
+      case 1:
+          handle_one();
+          break;
+      case 2:
+          handle_two();
+          break;
+      default:
+          handle_default();
+          break; /* Compliant: default is last */
+  }
+  ```
 
 ---
 
@@ -1655,11 +1975,19 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Non-compliant Example:**
   ```c
   switch (val) {
-      case 1: process(); break;
-      default: break; /* Non-compliant: only one case clause */
+      case 1:
+          process();
+          break;
+      default:
+          break; /* Non-compliant: only one case clause */
   }
   ```
-* **How to Fix:** Use an `if` statement for single-condition tests.
+* **How to Fix:** Use an `if` statement for single-condition tests, or add the missing cases.
+  ```c
+  if (val == 1) {
+      process(); /* Compliant: if is appropriate for a single condition */
+  }
+  ```
 
 ---
 
@@ -1667,9 +1995,23 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** The controlling expression of a `switch` statement shall not have essential Boolean type.
 * **Non-compliant Example:**
   ```c
-  switch (x == 5) { /* Non-compliant: boolean expression in switch */ }
+  switch (x == 5) { /* Non-compliant: boolean expression in switch */
+      case 0:
+          break;
+      case 1:
+          break;
+      default:
+          break;
+  }
   ```
 * **How to Fix:** Use an `if-else` statement for boolean conditions.
+  ```c
+  if (x == 5) {
+      handle_match();
+  } else {
+      handle_other(); /* Compliant: boolean handled with if/else */
+  }
+  ```
 
 ---
 
@@ -1681,9 +2023,16 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** Variable length argument features from `<stdarg.h>` (`va_list`, `va_arg`, `va_start`) shall not be used due to lack of type safety.
 * **Non-compliant Example:**
   ```c
-  void log_err(const char *fmt, ...) { /* Non-compliant */ }
+  void log_err(const char *fmt, ...) { /* Non-compliant */
+      (void)fmt;
+  }
   ```
 * **How to Fix:** Pass explicit typed arrays or structured parameters.
+  ```c
+  void log_err(const char *message, int32_t error_code) {
+      write_log(message, error_code); /* Compliant: fixed, typed parameters */
+  }
+  ```
 
 ---
 
@@ -1716,7 +2065,14 @@ Directives are guidelines where compliance cannot be determined by static analys
       compute(); /* Non-compliant if compute() prototype is missing */
   }
   ```
-* **How to Fix:** Declare function prototype before use.
+* **How to Fix:** Declare the function prototype before use.
+  ```c
+  int32_t compute(void);
+
+  void test(void) {
+      (void)compute(); /* Compliant: prototype visible before call */
+  }
+  ```
 
 ---
 
@@ -1742,15 +2098,37 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 ### Rule 17.5 (Advisory)
 * **Explanation:** Function argument declarations using array notation should match expected array dimensions.
-* **Non-compliant Example:** Passing a 2-element array to a parameter declared `int arr[10]`.
+* **Non-compliant Example:**
+  ```c
+  void process(int arr[10]);
+
+  void caller(void) {
+      int small[2] = {0, 1};
+      process(small); /* Non-compliant: caller array smaller than declared size */
+  }
+  ```
 * **How to Fix:** Ensure caller array allocations match parameter boundary specs.
+  ```c
+  void process(int arr[10]);
+
+  void caller(void) {
+      int values[10] = {0};
+      process(values); /* Compliant: array size matches declaration */
+  }
+  ```
 
 ---
 
 ### Rule 17.6 (Mandatory)
 * **Explanation:** The `static` keyword inside array parameter declarations (`void fn(int arr[static 10])`) shall not be used.
-* **Non-compliant Example:** `void fn(int arr[static 5]);`
+* **Non-compliant Example:**
+  ```c
+  void fn(int arr[static 5]); /* Non-compliant */
+  ```
 * **How to Fix:** Use standard pointer or fixed-size array notation without `static`.
+  ```c
+  void fn(int arr[5]); /* Compliant: no static array bound in parameter */
+  ```
 
 ---
 
@@ -1796,7 +2174,12 @@ Directives are guidelines where compliance cannot be determined by static analys
   int arr[5];
   int *p = &arr[10]; /* Non-compliant: out of bounds */
   ```
-* **How to Fix:** Keep pointer indices within bounds `[0 ... SIZE-1]`.
+* **How to Fix:** Keep pointer indices within bounds `[0 ... SIZE-1]` (one-past-end is allowed only for comparison, not dereference).
+  ```c
+  int arr[5];
+  int *p = &arr[4]; /* Compliant: within bounds */
+  *p = 1;
+  ```
 
 ---
 
@@ -1809,6 +2192,11 @@ Directives are guidelines where compliance cannot be determined by static analys
   ptrdiff_t diff = &a[2] - &b[2]; /* Non-compliant: pointers to different objects */
   ```
 * **How to Fix:** Subtract pointers only within shared array structures.
+  ```c
+  int a[5];
+  ptrdiff_t diff = &a[4] - &a[1]; /* Compliant: same array object */
+  (void)diff;
+  ```
 
 ---
 
@@ -1816,9 +2204,20 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** Relational operators (`<`, `<=`, `>`, `>=`) shall not be applied to pointers pointing to different memory objects.
 * **Non-compliant Example:**
   ```c
-  if (&a[0] < &b[0]) { /* Non-compliant: comparing addresses of distinct objects */ }
+  int a[5];
+  int b[5];
+  if (&a[0] < &b[0]) { /* Non-compliant: comparing addresses of distinct objects */
+  }
   ```
 * **How to Fix:** Perform relational comparisons only on pointers within the same array.
+  ```c
+  int a[5];
+  int *p = &a[1];
+  int *q = &a[3];
+  if (p < q) { /* Compliant: both point into array a */
+      process();
+  }
+  ```
 
 ---
 
@@ -1843,6 +2242,13 @@ Directives are guidelines where compliance cannot be determined by static analys
   int ***triple_ptr; /* Non-compliant */
   ```
 * **How to Fix:** Simplify data models or wrap pointers in structures.
+  ```c
+  typedef struct {
+      int *row;
+  } RowRef;
+
+  RowRef *table; /* Compliant: at most two levels of indirection */
+  ```
 
 ---
 
@@ -1857,14 +2263,36 @@ Directives are guidelines where compliance cannot be determined by static analys
       global_ptr = &local_val; /* Non-compliant: dangling pointer when setup returns */
   }
   ```
-* **How to Fix:** Assign addresses of static or global variables only.
+* **How to Fix:** Assign addresses of static or global variables only, or copy the value instead of the address.
+  ```c
+  int *global_ptr;
+  static int persistent_val = 10;
+
+  void setup(void) {
+      global_ptr = &persistent_val; /* Compliant: static storage outlives the function */
+  }
+  ```
 
 ---
 
 ### Rule 18.7 (Required)
 * **Explanation:** Flexible array members (`struct { int n; int arr[]; }`) shall not be declared.
-* **Non-compliant Example:** Declaring unbounded dynamic structures.
+* **Non-compliant Example:**
+  ```c
+  struct Packet {
+      int n;
+      int arr[]; /* Non-compliant: flexible array member */
+  };
+  ```
 * **How to Fix:** Declare array fields with explicit maximum sizes.
+  ```c
+  #define PACKET_MAX (32)
+
+  struct Packet {
+      int n;
+      int arr[PACKET_MAX]; /* Compliant: fixed-size array member */
+  };
+  ```
 
 ---
 
@@ -1908,9 +2336,24 @@ Directives are guidelines where compliance cannot be determined by static analys
 * **Explanation:** The `union` keyword should not be used, as it allows type punning and unintended bit reinterpretation.
 * **Non-compliant Example:**
   ```c
-  union Data { int i; float f; }; /* Non-compliant */
+  union Data {
+      int i;
+      float f;
+  }; /* Non-compliant */
   ```
 * **How to Fix:** Use explicit structure containers with type flags.
+  ```c
+  typedef enum {
+      DATA_INT,
+      DATA_FLOAT
+  } DataKind;
+
+  typedef struct {
+      DataKind kind;
+      int i;
+      float f;
+  } Data; /* Compliant: no overlapping storage */
+  ```
 
 ---
 
@@ -1925,42 +2368,84 @@ Directives are guidelines where compliance cannot be determined by static analys
   int x = 0;
   #include "header.h" /* Non-compliant: include after code */
   ```
-* **How to Fix:** Place all `#include` lines at top of file.
+* **How to Fix:** Place all `#include` lines at the top of the file.
+  ```c
+  #include "header.h" /* Compliant: includes before code */
+
+  int x = 0;
+  ```
 
 ---
 
 ### Rule 20.2 (Required)
 * **Explanation:** Characters `'`, `"`, `\`, or `/*` shall not occur in `#include` header names.
-* **Non-compliant Example:** `#include "dir\file.h"`
-* **How to Fix:** Use forward slashes `/` in paths: `#include "dir/file.h"`
+* **Non-compliant Example:**
+  ```c
+  #include "dir\file.h" /* Non-compliant: backslash in header name */
+  ```
+* **How to Fix:** Use forward slashes `/` in paths.
+  ```c
+  #include "dir/file.h" /* Compliant */
+  ```
 
 ---
 
 ### Rule 20.3 (Required)
 * **Explanation:** `#include` directives shall be followed by `<filename>` or `"filename"`.
-* **Non-compliant Example:** `#include file.h`
+* **Non-compliant Example:**
+  ```c
+  #include file.h /* Non-compliant: missing quotes/brackets */
+  ```
 * **How to Fix:** Use double quotes or angle brackets.
+  ```c
+  #include "file.h" /* Compliant */
+  /* or */
+  #include <stdint.h>
+  ```
 
 ---
 
 ### Rule 20.4 (Required)
 * **Explanation:** Macro names shall not shadow C language keywords.
-* **Non-compliant Example:** `#define int long`
-* **How to Fix:** Do not redefine standard C keywords.
+* **Non-compliant Example:**
+  ```c
+  #define int long /* Non-compliant: redefines keyword */
+  ```
+* **How to Fix:** Do not redefine standard C keywords; use distinct macro names.
+  ```c
+  #define INT32_WIDTH (32) /* Compliant: does not shadow a keyword */
+  ```
 
 ---
 
 ### Rule 20.5 (Advisory)
 * **Explanation:** `#undef` should not be used to undefine macros.
-* **Non-compliant Example:** `#undef MAX_SIZE`
-* **How to Fix:** Use unique macro names instead of undefining.
+* **Non-compliant Example:**
+  ```c
+  #define MAX_SIZE (100U)
+  #undef MAX_SIZE /* Non-compliant */
+  #define MAX_SIZE (200U)
+  ```
+* **How to Fix:** Use unique macro names instead of undefining and redefining.
+  ```c
+  #define MAX_SIZE_A (100U)
+  #define MAX_SIZE_B (200U) /* Compliant: no #undef */
+  ```
 
 ---
 
 ### Rule 20.6 (Required)
 * **Explanation:** Macro arguments shall not expand into preprocessor directives.
-* **Non-compliant Example:** Passing `#define X 1` inside a macro call.
+* **Non-compliant Example:**
+  ```c
+  #define M(x) x
+  M(#define X 1) /* Non-compliant: argument expands to a directive */
+  ```
 * **How to Fix:** Keep macro arguments restricted to pure expressions.
+  ```c
+  #define SCALE(x) ((x) * 2)
+  int y = SCALE(3); /* Compliant: expression argument only */
+  ```
 
 ---
 
@@ -1979,44 +2464,107 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 ### Rule 20.8 (Required)
 * **Explanation:** Controlling expressions of `#if` or `#elif` shall evaluate to 0 or 1.
-* **Non-compliant Example:** `#if (5 + 2)`
-* **How to Fix:** Compare explicitly against values: `#if ((5 + 2) == 7)`
+* **Non-compliant Example:**
+  ```c
+  #if (5 + 2) /* Non-compliant: controlling expression is not 0 or 1 */
+  #endif
+  ```
+* **How to Fix:** Compare explicitly against values so the result is 0 or 1.
+  ```c
+  #if ((5 + 2) == 7) /* Compliant: evaluates to 1 */
+  #endif
+  ```
 
 ---
 
 ### Rule 20.9 (Required)
 * **Explanation:** All identifiers used in `#if` or `#elif` expressions shall be defined before evaluation.
-* **Non-compliant Example:** `#if UNDEFINED_MACRO`
-* **How to Fix:** Use `defined()` checks first: `#if defined(FEATURE_X) && (FEATURE_X == 1)`
+* **Non-compliant Example:**
+  ```c
+  #if UNDEFINED_MACRO /* Non-compliant: identifier not defined */
+  #endif
+  ```
+* **How to Fix:** Use `defined()` checks first.
+  ```c
+  #if defined(FEATURE_X) && (FEATURE_X == 1) /* Compliant */
+  #endif
+  ```
 
 ---
 
 ### Rule 20.10 (Advisory)
 * **Explanation:** The `#` (stringification) and `##` (token pasting) preprocessor operators should not be used.
-* **Non-compliant Example:** `#define MAKE_VAR(name) var_##name`
+* **Non-compliant Example:**
+  ```c
+  #define MAKE_VAR(name) var_##name /* Non-compliant */
+  int MAKE_VAR(count);
+  ```
 * **How to Fix:** Declare variables explicitly without macro concatenation.
+  ```c
+  int var_count; /* Compliant: explicit declaration */
+  ```
 
 ---
 
 ### Rule 20.11 (Required)
-* **Explanation:** The `##` operator shall not be used unless the preceding macro parameter is evaluated.
+* **Explanation:** A macro parameter immediately following a `#` operator shall not be immediately followed by a `##` operator.
+* **Non-compliant Example:**
+  ```c
+  #define BAD(x) #x ## y /* Non-compliant: # parameter immediately followed by ## */
+  ```
+* **How to Fix:** Avoid combining `#` and `##` on the same parameter; prefer explicit identifiers or separate macros.
+  ```c
+  #define TIMEOUT_MS (100U)
+  uint32_t timeout = TIMEOUT_MS; /* Compliant: no # or ## operators */
+  ```
 
 ---
 
 ### Rule 20.12 (Required)
-* **Explanation:** A macro parameter used with `#` or `##` shall not be expanded elsewhere in the same macro.
+* **Explanation:** A macro parameter used as an operand to the `#` or `##` operators, which is itself subject to further macro replacement, shall only be used as an operand to these operators (not also expanded normally in the same replacement list).
+* **Non-compliant Example:**
+  ```c
+  #define M(x) #x x /* Non-compliant: parameter used with # and also expanded */
+  ```
+* **How to Fix:** Do not mix stringification/pasting of a parameter with normal expansion of that same parameter; prefer explicit code.
+  ```c
+  #define NAME "sensor"
+  const char *label = NAME; /* Compliant: no mixed #/## parameter use */
+  ```
 
 ---
 
 ### Rule 20.13 (Required)
-* **Explanation:** Preprocessor lines must form valid directives.
+* **Explanation:** A line whose first token is `#` shall be a valid preprocessing directive.
+* **Non-compliant Example:**
+  ```c
+  #not_a_directive 123 /* Non-compliant: invalid preprocessor directive */
+  ```
+* **How to Fix:** Use only valid preprocessor directives (`#include`, `#define`, `#if`, `#endif`, etc.).
+  ```c
+  #define BUFFER_SIZE (64U) /* Compliant: valid directive */
+  ```
 
 ---
 
 ### Rule 20.14 (Required)
 * **Explanation:** All `#if`, `#ifdef`, `#ifndef` directives must be terminated with `#endif` in the same file.
-* **Non-compliant Example:** Header file missing `#endif` at end of file.
+* **Non-compliant Example:**
+  ```c
+  /* header.h */
+  #ifndef HEADER_H
+  #define HEADER_H
+  void api(void);
+  /* Non-compliant: missing #endif */
+  ```
 * **How to Fix:** Ensure balanced conditional preprocessor directives in every file.
+  ```c
+  /* header.h */
+  #ifndef HEADER_H
+  #define HEADER_H
+  void api(void);
+  #endif /* Compliant: matching #endif */
+  ```
 
 ---
 
@@ -2026,75 +2574,212 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 ### Rule 21.1 (Required)
 * **Explanation:** `#define` and `#undef` shall not be used on standard library reserved identifiers or macros.
-* **Non-compliant Example:** `#define NULL (0)`
-* **How to Fix:** Include `<stddef.h>` for `NULL`.
+* **Non-compliant Example:**
+  ```c
+  #define NULL (0) /* Non-compliant */
+  ```
+* **How to Fix:** Include the appropriate standard header for reserved macros/identifiers.
+  ```c
+  #include <stddef.h>
+  void *p = NULL; /* Compliant: NULL from standard header */
+  ```
 
 ---
 
 ### Rule 21.2 (Required)
 * **Explanation:** Reserved identifiers (such as names starting with `_` or `__`) shall not be declared for user functions/objects.
-* **Non-compliant Example:** `int _my_var = 0;`
+* **Non-compliant Example:**
+  ```c
+  int _my_var = 0; /* Non-compliant */
+  ```
 * **How to Fix:** Remove leading underscores from identifier names.
+  ```c
+  int my_var = 0; /* Compliant */
+  ```
 
 ---
 
 ### Rule 21.3 (Required)
 * **Explanation:** `<stdlib.h>` dynamic memory functions (`malloc`, `calloc`, `realloc`, `free`) shall not be used.
-* **Non-compliant Example:** `int *p = malloc(sizeof(int));`
-* **How to Fix:** Use static object declarations.
+* **Non-compliant Example:**
+  ```c
+  int *p = malloc(sizeof(int)); /* Non-compliant */
+  ```
+* **How to Fix:** Use static object declarations or fixed-size buffers.
+  ```c
+  static int storage;
+  int *p = &storage; /* Compliant: no dynamic allocation */
+  ```
 
 ---
 
 ### Rule 21.4 (Required)
 * **Explanation:** Standard header `<setjmp.h>` and functions `setjmp`/`longjmp` shall not be used due to uncontrolled control flow jumps.
+* **Non-compliant Example:**
+  ```c
+  #include <setjmp.h>
+  static jmp_buf env;
+
+  void recover(void) {
+      longjmp(env, 1); /* Non-compliant */
+  }
+  ```
+* **How to Fix:** Use structured error returns and explicit control flow instead of non-local jumps.
+  ```c
+  int32_t do_work(void) {
+      if (failed()) {
+          return -1; /* Compliant: explicit error return */
+      }
+      return 0;
+  }
+  ```
 
 ---
 
 ### Rule 21.5 (Required)
 * **Explanation:** Standard header `<signal.h>` and asynchronous signal handling features shall not be used.
+* **Non-compliant Example:**
+  ```c
+  #include <signal.h>
+  signal(SIGINT, handler); /* Non-compliant */
+  ```
+* **How to Fix:** Handle exceptional conditions through polled status flags or dedicated RTOS/event mechanisms.
+  ```c
+  volatile bool shutdown_requested = false;
+
+  void service_loop(void) {
+      if (shutdown_requested) {
+          enter_safe_state(); /* Compliant: no signal.h */
+      }
+  }
+  ```
 
 ---
 
 ### Rule 21.6 (Required)
 * **Explanation:** Standard library I/O functions (`<stdio.h>`) shall not be used in embedded safety-critical software.
-* **Non-compliant Example:** `printf("Value: %d\n", val);`
+* **Non-compliant Example:**
+  ```c
+  printf("Value: %d\n", val); /* Non-compliant */
+  ```
 * **How to Fix:** Direct diagnostic output to dedicated hardware UART drivers or log buffers.
+  ```c
+  void uart_write(const char *msg);
+
+  void report(int32_t val) {
+      char buf[32];
+      (void)format_i32(buf, sizeof(buf), val);
+      uart_write(buf); /* Compliant: no stdio */
+  }
+  ```
 
 ---
 
 ### Rule 21.7 (Required)
 * **Explanation:** String conversion functions (`atof`, `atoi`, `atol`, `atoll`) from `<stdlib.h>` shall not be used due to unbounded behavior on invalid inputs.
-* **Non-compliant Example:** `int val = atoi(str);`
-* **How to Fix:** Use `strtol()` with range verification or custom bounded parsers.
+* **Non-compliant Example:**
+  ```c
+  int val = atoi(str); /* Non-compliant */
+  ```
+* **How to Fix:** Use `strtol()` with range verification or a custom bounded parser.
+  ```c
+  char *end = NULL;
+  long val = strtol(str, &end, 10);
+  if ((end == str) || (*end != '\0') || (val > INT_MAX) || (val < INT_MIN)) {
+      handle_parse_error();
+  } else {
+      use_value((int)val); /* Compliant: validated conversion */
+  }
+  ```
 
 ---
 
 ### Rule 21.8 (Required)
 * **Explanation:** System termination functions (`abort`, `exit`, `getenv`, `system`) from `<stdlib.h>` shall not be used.
-* **Non-compliant Example:** `exit(1);`
+* **Non-compliant Example:**
+  ```c
+  exit(1); /* Non-compliant */
+  ```
 * **How to Fix:** Implement system safe-state recovery logic.
+  ```c
+  void enter_safe_state(void) {
+      disable_actuators();
+      request_reset(); /* Compliant: controlled recovery, no exit/abort */
+  }
+  ```
 
 ---
 
 ### Rule 21.9 (Required)
 * **Explanation:** `bsearch` and `qsort` from `<stdlib.h>` shall not be used due to unverified function pointer callbacks and potential stack overhead.
-* **Non-compliant Example:** Calling `qsort()` on an array.
+* **Non-compliant Example:**
+  ```c
+  qsort(arr, n, sizeof(arr[0]), cmp); /* Non-compliant */
+  ```
 * **How to Fix:** Implement explicit, statically bounded sorting algorithms (e.g., insertion sort).
+  ```c
+  void insertion_sort(int32_t *arr, size_t n) {
+      for (size_t i = 1U; i < n; i++) {
+          int32_t key = arr[i];
+          size_t j = i;
+          while ((j > 0U) && (arr[j - 1U] > key)) {
+              arr[j] = arr[j - 1U];
+              j--;
+          }
+          arr[j] = key; /* Compliant: no qsort/bsearch */
+      }
+  }
+  ```
 
 ---
 
 ### Rule 21.10 (Required)
 * **Explanation:** Standard header `<time.h>` date and time functions shall not be used.
+* **Non-compliant Example:**
+  ```c
+  #include <time.h>
+  time_t now = time(NULL); /* Non-compliant */
+  ```
+* **How to Fix:** Use a project-specific monotonic tick/counter from the platform timer driver.
+  ```c
+  uint32_t get_system_ticks(void); /* platform timer API */
+
+  uint32_t now = get_system_ticks(); /* Compliant: no time.h */
+  ```
 
 ---
 
 ### Rule 21.11 (Required)
 * **Explanation:** Standard header `<tgmath.h>` type-generic math library shall not be used.
+* **Non-compliant Example:**
+  ```c
+  #include <tgmath.h>
+  double y = sqrt(x); /* Non-compliant via tgmath type-generic macro */
+  ```
+* **How to Fix:** Include the typed math header and call the explicitly typed function.
+  ```c
+  #include <math.h>
+  double y = sqrt(x); /* Compliant: typed math.h function */
+  ```
 
 ---
 
 ### Rule 21.12 (Advisory)
 * **Explanation:** Standard header `<fenv.h>` floating-point exception handling should not be used.
+* **Non-compliant Example:**
+  ```c
+  #include <fenv.h>
+  feclearexcept(FE_ALL_EXCEPT); /* Non-compliant */
+  ```
+* **How to Fix:** Validate floating-point inputs/outputs explicitly instead of relying on floating-environment traps.
+  ```c
+  float safe_div(float a, float b) {
+      if ((b == 0.0f) || isnan(a) || isnan(b) || isinf(a) || isinf(b)) {
+          return 0.0f; /* Compliant: explicit checks, no fenv.h */
+      }
+      return a / b;
+  }
+  ```
 
 ---
 
@@ -2104,8 +2789,28 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 ### Rule 22.1 (Required)
 * **Explanation:** All resources allocated dynamically (such as file handles or hardware locks) must be explicitly released on all path exits.
-* **Non-compliant Example:** Returning from a function without closing an opened file handle.
+* **Non-compliant Example:**
+  ```c
+  void read_config(const char *path) {
+      FILE *fp = fopen(path, "r");
+      if (fp == NULL) {
+          return;
+      }
+      parse(fp);
+      return; /* Non-compliant: file handle not closed */
+  }
+  ```
 * **How to Fix:** Ensure resource handles are explicitly released prior to every return path.
+  ```c
+  void read_config(const char *path) {
+      FILE *fp = fopen(path, "r");
+      if (fp == NULL) {
+          return;
+      }
+      parse(fp);
+      (void)fclose(fp); /* Compliant: resource released */
+  }
+  ```
 
 ---
 
@@ -2116,24 +2821,87 @@ Directives are guidelines where compliance cannot be determined by static analys
   fclose(fp);
   fclose(fp); /* Non-compliant: double release */
   ```
-* **How to Fix:** Set resource handle to `NULL` after release and check before closing.
+* **How to Fix:** Set the resource handle to `NULL` after release and check before closing.
+  ```c
+  if (fp != NULL) {
+      (void)fclose(fp);
+      fp = NULL; /* Compliant: prevent double release */
+  }
+  ```
 
 ---
 
 ### Rule 22.3 (Required)
 * **Explanation:** The same file shall not be opened simultaneously for read and write on different streams.
+* **Non-compliant Example:**
+  ```c
+  FILE *in = fopen("data.bin", "r");
+  FILE *out = fopen("data.bin", "w"); /* Non-compliant: same file, dual streams */
+  ```
+* **How to Fix:** Open a single stream with the required access mode, or use separate files.
+  ```c
+  FILE *fp = fopen("data.bin", "r+"); /* Compliant: one stream for the file */
+  if (fp != NULL) {
+      /* read/write via the same stream */
+      (void)fclose(fp);
+  }
+  ```
 
 ---
 
 ### Rule 22.4 (Required)
 * **Explanation:** A read-only stream shall not be written to, and a write-only stream shall not be read from.
+* **Non-compliant Example:**
+  ```c
+  FILE *fp = fopen("log.txt", "r");
+  fputc('x', fp); /* Non-compliant: write to read-only stream */
+  ```
+* **How to Fix:** Open the stream with a mode that matches the intended operations.
+  ```c
+  FILE *fp = fopen("log.txt", "w");
+  if (fp != NULL) {
+      (void)fputc('x', fp); /* Compliant: write on write-mode stream */
+      (void)fclose(fp);
+  }
+  ```
 
 ---
 
 ### Rule 22.5 (Mandatory)
 * **Explanation:** Pointers to `FILE` objects shall not be dereferenced directly.
+* **Non-compliant Example:**
+  ```c
+  FILE *fp = fopen("a.txt", "r");
+  int fd = fp->_file; /* Non-compliant: direct FILE dereference / member access */
+  ```
+* **How to Fix:** Interact with streams only through the standard library API.
+  ```c
+  FILE *fp = fopen("a.txt", "r");
+  if (fp != NULL) {
+      int ch = fgetc(fp); /* Compliant: API access only */
+      (void)ch;
+      (void)fclose(fp);
+  }
+  ```
 
 ---
 
 ### Rule 22.6 (Required)
 * **Explanation:** The value of a pointer to a closed `FILE` stream shall not be used.
+* **Non-compliant Example:**
+  ```c
+  FILE *fp = fopen("a.txt", "r");
+  (void)fclose(fp);
+  (void)fgetc(fp); /* Non-compliant: use after close */
+  ```
+* **How to Fix:** Null out the pointer after closing and never use a closed stream.
+  ```c
+  FILE *fp = fopen("a.txt", "r");
+  if (fp != NULL) {
+      (void)fclose(fp);
+      fp = NULL; /* Compliant: closed pointer invalidated */
+  }
+  ```
+
+---
+
