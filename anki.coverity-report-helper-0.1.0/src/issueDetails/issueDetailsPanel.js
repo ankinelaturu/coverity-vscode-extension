@@ -4,6 +4,7 @@ const vscode = require('vscode');
 const { buildIssueDetailsHtml, emptyIssueDetailsHtml } = require('./buildIssueDetailsHtml');
 const { lookupMisraRule, loadMisraRules } = require('../misra/misraRules');
 const { computePossibleFixForFinding } = require('../misra/possibleFixActions');
+const { suggestPossibleFix } = require('../misra/possibleFix');
 const { describe } = require('../lookup/lookup');
 const { listFindingsOnLine } = require('../codelens/findingsAtLine');
 const { matchDiagnosticFinding } = require('../navigation/editorNavigation');
@@ -214,6 +215,17 @@ class IssueDetailsViewProvider {
         possibleFix = await computePossibleFixForFinding(this.session, findingId);
       } catch (err) {
         console.warn('Coverity: possible fix failed', err);
+      }
+      // If source could not be resolved, still show reference pattern from the rule book.
+      if (!possibleFix && rule) {
+        possibleFix = suggestPossibleFix({
+          checkerId,
+          typeTitle,
+          documentText: '',
+          focusLine: 0,
+          events: finding.events,
+          rule,
+        });
       }
       const html = buildIssueDetailsHtml({
         checkerId,

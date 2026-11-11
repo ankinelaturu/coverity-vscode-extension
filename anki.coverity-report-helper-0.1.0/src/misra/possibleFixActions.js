@@ -2,7 +2,11 @@
 
 const vscode = require('vscode');
 const { suggestPossibleFix } = require('./possibleFix');
+const { lookupMisraRule } = require('./misraRules');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
+
+/** @type {import('vscode').ExtensionContext | null} */
+let extensionContext = null;
 
 /**
  * Resolve document + focus line for a finding's primary (last) event.
@@ -47,12 +51,16 @@ async function computePossibleFixForFinding(session, findingId) {
   if (!src) {
     return null;
   }
+  const rule = extensionContext
+    ? lookupMisraRule(extensionContext, src.finding.checkerId, src.finding.typeTitle)
+    : null;
   return suggestPossibleFix({
     checkerId: src.finding.checkerId,
     typeTitle: src.finding.typeTitle,
     documentText: src.document.getText(),
     focusLine: src.focusLine,
     events: src.finding.events,
+    rule,
   });
 }
 
@@ -70,16 +78,20 @@ async function applyPossibleFix(session, findingId) {
     vscode.window.showWarningMessage('Coverity: could not resolve source for this finding.');
     return;
   }
+  const rule = extensionContext
+    ? lookupMisraRule(extensionContext, src.finding.checkerId, src.finding.typeTitle)
+    : null;
   const fix = suggestPossibleFix({
     checkerId: src.finding.checkerId,
     typeTitle: src.finding.typeTitle,
     documentText: src.document.getText(),
     focusLine: src.focusLine,
     events: src.finding.events,
+    rule,
   });
-  if (!fix?.applyable) {
+  if (!fix?.applyable || fix.referenceOnly) {
     vscode.window.showInformationMessage(
-      'Coverity: no offline possible fix for this finding (supported: Rules 11.9, 15.7, 17.7).'
+      'Coverity: no applyable offline rewrite for this finding. See Issue Details for guidance / reference pattern.'
     );
     return;
   }
@@ -136,6 +148,7 @@ function coverityDiagnosticsTouchingLine(document, line) {
  * @param {object} session
  */
 function registerPossibleFixSupport(context, session) {
+  extensionContext = context;
   const applyCmd = vscode.commands.registerCommand(
     'coverity.applyPossibleFix',
     async (findingId) => {
@@ -185,7 +198,7 @@ function registerPossibleFixSupport(context, session) {
         const actions = [];
         for (const fid of findingIds) {
           const fix = await computePossibleFixForFinding(session, fid);
-          if (!fix?.applyable) {
+          if (!fix?.applyable || fix.referenceOnly) {
             continue;
           }
           const action = new vscode.CodeAction(

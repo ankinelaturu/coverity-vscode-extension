@@ -375,19 +375,26 @@ function renderPossibleFixSection(fix) {
   }
   const { left, right } = diffLines(fix.originalText, fix.proposedText);
   const conf = String(fix.confidence || 'low').toLowerCase();
-  const applyHint = fix.applyable
+  const refOnly = fix.referenceOnly === true;
+  const sectionLabel = refOnly ? 'Reference pattern' : 'Possible fix';
+  const leftTitle = refOnly ? 'Example' : 'Current';
+  const rightTitle = refOnly ? 'Fixed' : 'Proposed';
+  const applyHint = fix.applyable && !refOnly
     ? 'Apply via Quick Fix (lightbulb) or command <code>Coverity: Apply Possible Fix</code>.'
-    : 'Review only — not auto-applied.';
+    : refOnly
+      ? 'Guidance only — this is the rulebook pattern, not an edit of your source. No Apply action.'
+      : 'Review only — not auto-applied.';
   return `
-      <div class="diff-section possible-fix">
+      <div class="diff-section possible-fix${refOnly ? ' reference-only' : ''}">
         <div class="diff-box">
           <div class="diff-box-header">
-            <span class="diff-box-label">Possible fix
+            <span class="diff-box-label">${escapeHtml(sectionLabel)}
               <span class="conf conf-${escapeHtml(conf)}" title="Offline heuristic confidence">${escapeHtml(conf)}</span>
+              ${refOnly ? '<span class="conf conf-ref">pattern</span>' : ''}
             </span>
             <span class="diff-box-legend">
-              <span class="leg del">Current</span>
-              <span class="leg add">Proposed</span>
+              <span class="leg del">${escapeHtml(leftTitle)}</span>
+              <span class="leg add">${escapeHtml(rightTitle)}</span>
             </span>
           </div>
           <div class="fix-meta">
@@ -396,8 +403,8 @@ function renderPossibleFixSection(fix) {
             <p class="fix-apply muted">${applyHint}</p>
           </div>
           <div class="diff">
-            ${renderPane(left, 'left', { leftTitle: 'Current', rightTitle: 'Proposed' })}
-            ${renderPane(right, 'right', { leftTitle: 'Current', rightTitle: 'Proposed' })}
+            ${renderPane(left, 'left', { leftTitle, rightTitle })}
+            ${renderPane(right, 'right', { leftTitle, rightTitle })}
           </div>
         </div>
       </div>`;
@@ -465,7 +472,11 @@ function buildIssueDetailsHtml(opts) {
   const title = opts.typeTitle || checker;
   const rule = opts.rule;
   const headingHtml = renderIssueHeading(title, checker, rule);
-  const possibleFixHtml = opts.possibleFix ? renderPossibleFixSection(opts.possibleFix) : '';
+  // Reference-only fallback duplicates the Example|Fixed book samples — skip it in the UI.
+  const possibleFixHtml =
+    opts.possibleFix && !opts.possibleFix.referenceOnly
+      ? renderPossibleFixSection(opts.possibleFix)
+      : '';
 
   let body;
   if (!rule) {
@@ -664,6 +675,10 @@ function buildIssueDetailsHtml(opts) {
   .conf-low {
     color: #c8c8c8;
     background: rgba(127, 127, 127, 0.22);
+  }
+  .conf-ref {
+    color: #9cc7f0;
+    background: rgba(80, 150, 220, 0.22);
   }
   .fix-meta {
     padding: 8px 12px 4px;
