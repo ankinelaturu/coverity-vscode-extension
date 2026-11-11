@@ -365,6 +365,54 @@ function renderPane(lines, side) {
 }
 
 /**
+ * Parse Coverity-style checker id: "MISRA C-2012 Rule 18.1, Required"
+ * @param {string} checkerId
+ * @param {import('../misra/misraRules').MisraRuleEntry | null} rule
+ * @returns {{ refLabel: string, category: string }}
+ */
+function splitCheckerPill(checkerId, rule) {
+  const raw = String(checkerId || '').trim();
+  const m = raw.match(/^(.*?)(?:,\s*)?(Mandatory|Required|Advisory)\s*$/i);
+  if (m) {
+    return {
+      refLabel: m[1].replace(/,\s*$/, '').trim() || raw,
+      category: m[2],
+    };
+  }
+  if (rule) {
+    return {
+      refLabel: `MISRA C-2012 ${rule.kind} ${rule.number}`,
+      category: rule.category || '',
+    };
+  }
+  return { refLabel: raw || 'Unknown', category: '' };
+}
+
+/**
+ * @param {string} typeTitle
+ * @param {string} checkerId
+ * @param {import('../misra/misraRules').MisraRuleEntry | null} rule
+ */
+function renderIssueHeading(typeTitle, checkerId, rule) {
+  const group = String(typeTitle || '').trim() || String(checkerId || 'Issue').trim();
+  const { refLabel, category } = splitCheckerPill(checkerId, rule);
+  const catClass = String(category || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+  const pillInner = category
+    ? `<span class="pill-ref">${escapeHtml(refLabel)}</span><span class="pill-split" aria-hidden="true"></span><span class="pill-cat">${escapeHtml(category)}</span>`
+    : `<span class="pill-ref">${escapeHtml(refLabel)}</span>`;
+
+  return `
+    <div class="issue-heading">
+      <h1 class="issue-group">${escapeHtml(group)}</h1>
+      <div class="rule-pill ${catClass ? `cat-${catClass}` : ''}" title="${escapeHtml(checkerId || refLabel)}">
+        ${pillInner}
+      </div>
+    </div>`;
+}
+
+/**
  * @param {object} opts
  * @param {string} opts.checkerId
  * @param {string} opts.typeTitle
@@ -376,14 +424,13 @@ function buildIssueDetailsHtml(opts) {
   const checker = opts.checkerId || 'Unknown';
   const title = opts.typeTitle || checker;
   const rule = opts.rule;
+  const headingHtml = renderIssueHeading(title, checker, rule);
 
   let body;
   if (!rule) {
     body = `
       <div class="meta">
-        <div class="badge">Non-MISRA / no reference</div>
-        <h1>${escapeHtml(title)}</h1>
-        <p class="checker">${escapeHtml(checker)}</p>
+        ${headingHtml}
         ${opts.findingSummary ? `<p class="summary">${escapeHtml(opts.findingSummary)}</p>` : ''}
         <p class="muted">No MISRA C:2012 entry matched this checker. Details panel focuses on MISRA Rule/Dir references.</p>
       </div>`;
@@ -391,9 +438,7 @@ function buildIssueDetailsHtml(opts) {
     const { left, right } = diffLines(rule.example, rule.fixed);
     body = `
       <div class="meta">
-        <div class="badge">${escapeHtml(rule.kind)} · ${escapeHtml(rule.category)}</div>
-        <h1>${escapeHtml(rule.heading)}</h1>
-        <p class="checker">${escapeHtml(checker)}</p>
+        ${headingHtml}
         <p class="desc">${escapeHtml(rule.description)}</p>
         ${rule.whyFix ? `<p class="why"><strong>Why fix?</strong> ${escapeHtml(rule.whyFix)}</p>` : ''}
         ${rule.howToFix ? `<p class="how"><strong>How to fix:</strong> ${escapeHtml(rule.howToFix)}</p>` : ''}
@@ -445,23 +490,61 @@ function buildIssueDetailsHtml(opts) {
   .meta {
     padding: 12px 14px 10px;
   }
-  .badge {
-    display: inline-block;
-    font-size: 11px;
-    letter-spacing: 0.02em;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--vscode-badge-background);
-    color: var(--vscode-badge-foreground);
-    margin-bottom: 8px;
+  .issue-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin: 0 0 10px;
   }
-  h1 {
-    margin: 0 0 6px;
+  .issue-group {
+    margin: 0;
     font-size: 15px;
     font-weight: 600;
     line-height: 1.35;
   }
-  .checker, .muted, .summary {
+  .rule-pill {
+    display: inline-flex;
+    align-items: stretch;
+    max-width: 100%;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--vscode-widget-border, rgba(128,128,128,.45));
+    background: var(--vscode-badge-background, rgba(127,127,127,.18));
+    color: var(--vscode-badge-foreground, var(--vscode-foreground));
+    font-size: 11px;
+    line-height: 1.2;
+  }
+  .pill-ref {
+    padding: 4px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pill-split {
+    width: 1px;
+    background: var(--vscode-widget-border, rgba(128,128,128,.55));
+    opacity: 0.9;
+  }
+  .pill-cat {
+    padding: 4px 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .rule-pill.cat-required .pill-cat {
+    background: rgba(230, 160, 40, 0.28);
+    color: #f0c56a;
+  }
+  .rule-pill.cat-advisory .pill-cat {
+    background: rgba(80, 150, 220, 0.28);
+    color: #9cc7f0;
+  }
+  .rule-pill.cat-mandatory .pill-cat {
+    background: rgba(220, 70, 70, 0.28);
+    color: #ff9a9a;
+  }
+  .muted, .summary {
     margin: 0 0 8px;
     opacity: 0.8;
     font-size: 12px;
@@ -628,4 +711,6 @@ module.exports = {
   inlineDiffHtml,
   similarity,
   escapeHtml,
+  splitCheckerPill,
+  renderIssueHeading,
 };
