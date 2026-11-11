@@ -1,4 +1,4 @@
-Detected 14 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
+Detected 15 defect occurrences in interstellar sample (synthetic multiline; cov-format-errors style).
 
 interstellar/src/nav_reader.c:13:9: CID 90001 (#1 of 1):
   Type: Explicit null dereferenced (FORWARD_NULL)
@@ -133,3 +133,11 @@ interstellar/src/logic_dead.c:8:5: CID 90102 (#1 of 1):
 
 interstellar/src/logic_dead.c:8:5:
   dead_code: Execution cannot reach this statement: return x + 1;
+
+interstellar/src/misra_control.c:5:3: CID 90300 (#1 of 1):
+  Type: MISRA C-2012 Control Flow (MISRA C-2012 Rule 15.7, Required)
+
+interstellar/src/misra_control.c:5:3:
+  1. misra_c_2012_rule_15_7_violation: if ... else if chain is not terminated with a final else.
+interstellar/src/misra_control.c:9:3:
+  2. missing_else: Final else clause is required for completeness.

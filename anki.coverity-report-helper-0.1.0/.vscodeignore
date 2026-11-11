@@ -4,3 +4,4 @@ docs/**
 my-repo/**
 **/*.md
 !README.md
+!data/**/*.md

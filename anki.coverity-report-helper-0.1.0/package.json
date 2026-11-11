@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -20,6 +20,13 @@
           "title": "Coverity",
           "icon": "media/duck.svg"
         }
+      ],
+      "panel": [
+        {
+          "id": "coverityDetails",
+          "title": "Coverity Details",
+          "icon": "media/duck.svg"
+        }
       ]
     },
     "views": {
@@ -28,6 +35,14 @@
           "type": "webview",
           "id": "coverity.fullTrace",
           "name": "Full Trace",
+          "when": "coverity.hasReport"
+        }
+      ],
+      "coverityDetails": [
+        {
+          "type": "webview",
+          "id": "coverity.issueDetails",
+          "name": "Issue Details",
           "when": "coverity.hasReport"
         }
       ]
@@ -144,6 +159,13 @@
         "enablement": "coverity.hasReport"
       },
       {
+        "command": "coverity.showIssueDetails",
+        "title": "Issue Details",
+        "icon": "$(book)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
         "command": "coverity.pickProblemsTypeFilter",
         "title": "Filter Coverity by Checker",
         "icon": {
@@ -167,6 +189,11 @@
           "command": "coverity.showTracePeek",
           "when": "coverity.hasReport && (editorLangId == c || editorLangId == cpp)",
           "group": "navigation@50"
+        },
+        {
+          "command": "coverity.showIssueDetails",
+          "when": "coverity.hasReport && (editorLangId == c || editorLangId == cpp)",
+          "group": "navigation@51"
         }
       ],
       "commandPalette": [
@@ -180,6 +207,7 @@
         { "command": "coverity.previousTraceStep", "when": "coverity.hasReport" },
         { "command": "coverity.nextTraceStep", "when": "coverity.hasReport" },
         { "command": "coverity.showTracePeek", "when": "coverity.hasReport" },
+        { "command": "coverity.showIssueDetails", "when": "coverity.hasReport" },
         { "command": "coverity.pickProblemsTypeFilter", "when": "coverity.hasReport" }
       ]
     },
@@ -217,6 +245,11 @@
           "type": "boolean",
           "default": true,
           "description": "After Full Trace is opened, refresh the sidebar when you change the active issue or event (CodeLens, hover, prev/next)."
+        },
+        "coverity.issueDetailsFollowActive": {
+          "type": "boolean",
+          "default": true,
+          "description": "Refresh the Issue Details panel when the active Coverity finding changes (Problems navigation, CodeLens, hover)."
         },
         "coverity.codeLensEnabled": {
           "type": "boolean",

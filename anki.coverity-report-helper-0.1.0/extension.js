@@ -16,6 +16,10 @@ const {
   registerFullTraceView,
   registerTracePeekCodeActions,
 } = require('./src/tracePeek/tracePeekPanel');
+const {
+  registerIssueDetailsView,
+  showIssueDetails,
+} = require('./src/issueDetails/issueDetailsPanel');
 const { listFindingsOnLine, findingDisplayName } = require('./src/codelens/findingsAtLine');
 const { formatStepLabel } = require('./src/model/stepDisplay');
 const { syncEditorNavigationContext } = require('./src/navigation/editorNavigation');
@@ -86,6 +90,7 @@ function activate(context) {
     registerHoverProvider(session),
     registerCodeLens(session),
     registerFullTraceView(context, session),
+    registerIssueDetailsView(context, session),
     registerTracePeekCodeActions(context, session),
     registerReportStatusBar(session),
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
@@ -258,6 +263,7 @@ function registerCommands(context, session) {
   reg('coverity.showTracePeek', (findingId, eventIndex) =>
     showTracePeek(session, findingId, eventIndex)
   );
+  reg('coverity.showIssueDetails', (findingId) => showIssueDetails(session, findingId));
   reg('coverity.cycleHoverFinding', (arg) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {

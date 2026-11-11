@@ -4,7 +4,8 @@
     "FORWARD_NULL": "Pointer may be null when dereferenced (forward null path).",
     "DEADCODE": "Code that cannot be executed.",
     "MISRA C-2012 Rule 18.1, Required": "Array bounds / indexing (MISRA C-2012 Rule 18.1).",
-    "MISRA C-2012 Rule 21.6, Advisory": "Use of standard library I/O (MISRA C-2012 Rule 21.6)."
+    "MISRA C-2012 Rule 21.6, Advisory": "Use of standard library I/O (MISRA C-2012 Rule 21.6).",
+    "MISRA C-2012 Rule 15.7, Required": "if ... else if chains must end with a final else (MISRA C-2012 Rule 15.7)."
   },
   "eventTags": {
     "returned_null": "A call returned null.",
