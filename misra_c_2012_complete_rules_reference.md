@@ -1,6 +1,6 @@
 # MISRA C:2012 Guidelines Reference Manual (with Code Examples & Fixes)
 
-This document provides a comprehensive listing of **MISRA C:2012** Directives and Rules as defined by the Motor Industry Software Reliability Association (MISRA). Each entry includes a description, a separate Fix note, and a side-by-side Example | Fixed code comparison.
+This document provides a comprehensive listing of **MISRA C:2012** Directives and Rules as defined by the Motor Industry Software Reliability Association (MISRA). Each entry includes a description, a Why fix? note (risk of non-compliance), a How to fix note, and a side-by-side Example | Fixed code comparison.
 
 ---
 
@@ -14,7 +14,9 @@ Directives are guidelines where compliance cannot be determined by static analys
 
 Any implementation-defined behavior (such as endianness, integer representation, or bit-field ordering) on which the program depends must be documented and understood by the team.
 
-**Fix:** Document compiler/hardware requirements in your project architecture documentation, or isolate byte operations using bitwise shifts.
+**Why fix?** Undocumented implementation-defined behavior can make the same source behave differently across compilers or targets, causing silent portability bugs and incorrect safety assumptions.
+
+**How to fix:** Document compiler/hardware requirements in your project architecture documentation, or isolate byte operations using bitwise shifts.
 
 <table>
 <thead>
@@ -53,7 +55,9 @@ uint8_t first_byte = (uint8_t)(val & 0xFFU);
 
 All source files in the system must compile cleanly without any errors or warnings under the target compiler set with strict diagnostics enabled.
 
-**Fix:** Ensure all files build with zero syntax, structural, or language constraint errors across all target build configurations.
+**Why fix?** Warnings and build errors often hide real defects; shipping code that does not build cleanly under strict diagnostics increases the chance that undefined or unintended behavior reaches production.
+
+**How to fix:** Ensure all files build with zero syntax, structural, or language constraint errors across all target build configurations.
 
 <table>
 <thead>
@@ -94,7 +98,9 @@ int process(void) {
 
 All source code must be traceable back to documented requirements (software safety requirements, functional requirements, or system specifications).
 
-**Fix:** Annotate functions with requirement traceability tags linking directly to system design documentation.
+**Why fix?** Code without requirement traceability is hard to justify in safety reviews and may implement unintended behavior that escapes verification and validation.
+
+**How to fix:** Annotate functions with requirement traceability tags linking directly to system design documentation.
 
 <table>
 <thead>
@@ -135,7 +141,9 @@ void enter_safe_state(void) {
 
 Code must be designed to minimize run-time failures, including arithmetic overflow, divide-by-zero, pointer dereferencing errors, and buffer overruns.
 
-**Fix:** Add defensive checks prior to operations that could result in runtime exceptions.
+**Why fix?** Unchecked arithmetic, null dereference, and buffer errors lead to undefined behavior, crashes, or corrupted state at runtime.
+
+**How to fix:** Add defensive checks prior to operations that could result in runtime exceptions.
 
 <table>
 <thead>
@@ -179,7 +187,9 @@ int divide_values(int a, int b, int *out_result) {
 
 All usage of assembly language must be explicitly documented to specify register usage, side effects, and memory boundaries.
 
-**Fix:** Document the assembly instructions and encapsulate them inside documented wrapper functions.
+**Why fix?** Undocumented assembly hides register clobbers, side effects, and timing assumptions that maintainers and analyzers cannot safely reason about.
+
+**How to fix:** Document the assembly instructions and encapsulate them inside documented wrapper functions.
 
 <table>
 <thead>
@@ -222,7 +232,9 @@ void reset_cpu(void) {
 
 Assembly language instructions must be encapsulated inside standalone functions or macros and isolated from C logic.
 
-**Fix:** Encapsulate assembly commands inside single-purpose helper functions.
+**Why fix?** Mixing assembly into business logic makes control flow and side effects hard to review, test, and reuse, increasing the risk of incorrect interrupt or register handling.
+
+**How to fix:** Encapsulate assembly commands inside single-purpose helper functions.
 
 <table>
 <thead>
@@ -269,7 +281,9 @@ int compute(int a, int b) {
 
 Sections of code should not be disabled by placing them inside comments. Use preprocessor conditional compilation or remove unused code entirely.
 
-**Fix:** Remove commented-out code blocks or use `#if 0` with explicit explanations if temporary exclusion is needed.
+**Why fix?** Commented-out code decays, confuses reviews, and can be accidentally re-enabled or hide the true intended behavior.
+
+**How to fix:** Remove commented-out code blocks or use `#if 0` with explicit explanations if temporary exclusion is needed.
 
 <table>
 <thead>
@@ -312,7 +326,9 @@ void update_sensor(void) {
 
 Identifiers in the same namespace with overlapping visibility should be typographically unambiguous (avoid relying on combinations of `1`/`l`/`I` or `O`/`0`).
 
-**Fix:** Choose distinct, clear identifier names.
+**Why fix?** Visually ambiguous identifiers cause wrong-symbol edits and review mistakes that are easy to miss but costly in safety-critical code.
+
+**How to fix:** Choose distinct, clear identifier names.
 
 <table>
 <thead>
@@ -349,7 +365,9 @@ int total_index1_value; /* Compliant: clear and distinct names */
 
 Standard basic numeric types (`int`, `short`, `long`, `char`) should not be used directly. Explicit typedefs indicating size and signedness (e.g., `uint32_t`, `int16_t` from `<stdint.h>`) should be used instead.
 
-**Fix:** Use standard exact-width integer types.
+**Why fix?** Basic types like `int`/`long` change width and signedness by platform, so the same logic can overflow or truncate differently on each target.
+
+**How to fix:** Use standard exact-width integer types.
 
 <table>
 <thead>
@@ -384,7 +402,9 @@ uint32_t counter; /* Compliant: explicit width and signedness */
 
 If a function returns error information, that error status must be explicitly tested by the caller.
 
-**Fix:** Store and check return values from functions that report status.
+**Why fix?** Ignoring error returns leaves failed operations undetected, so the system may continue with invalid state or unreleased resources.
+
+**How to fix:** Store and check return values from functions that report status.
 
 <table>
 <thead>
@@ -425,7 +445,9 @@ void process_file(void) {
 
 If a pointer to a `struct` or `union` is never dereferenced within a translation unit, the internal layout of the structure should be hidden (opaque pointer design pattern).
 
-**Fix:** Forward-declare the structure in the header and define its members only in the implementation file.
+**Why fix?** Exposing unused structure layouts couples callers to internals and invites accidental field access that breaks encapsulation and future changes.
+
+**How to fix:** Forward-declare the structure in the header and define its members only in the implementation file.
 
 <table>
 <thead>
@@ -471,7 +493,9 @@ struct DeviceHandle {
 
 A inline function should be used in preference to a function-like macro where they are interchangeable to ensure type checking and prevent double-evaluation bugs.
 
-**Fix:** Replace function-like macros with type-safe inline functions.
+**Why fix?** Function-like macros skip type checking and can evaluate arguments multiple times, causing subtle side-effect bugs.
+
+**How to fix:** Replace function-like macros with type-safe inline functions.
 
 <table>
 <thead>
@@ -508,7 +532,9 @@ static inline int32_t max_int32(int32_t a, int32_t b) {
 
 Header files must be protected against multiple inclusion using include guards or `#pragma once`.
 
-**Fix:** Wrap the entire header contents in `#ifndef`, `#define`, and `#endif`.
+**Why fix?** Missing include guards cause multiple-definition errors, conflicting declarations, and unpredictable build failures.
+
+**How to fix:** Wrap the entire header contents in `#ifndef`, `#define`, and `#endif`.
 
 <table>
 <thead>
@@ -549,7 +575,9 @@ void calculate(void);
 
 Parameters passed to standard library functions must be validated before calling to prevent undefined behavior.
 
-**Fix:** Check boundary conditions and parameter ranges prior to library function invocations.
+**Why fix?** Invalid library arguments (null, out-of-range sizes) invoke undefined behavior and can corrupt memory or crash.
+
+**How to fix:** Check boundary conditions and parameter ranges prior to library function invocations.
 
 <table>
 <thead>
@@ -592,7 +620,9 @@ void print_sub(const char *str) {
 
 Dynamic memory allocation (`malloc`, `calloc`, `realloc`, `free`) shall not be used in embedded safety-critical software due to risk of heap fragmentation, memory leaks, and non-deterministic run times.
 
-**Fix:** Allocate memory statically at compile time.
+**Why fix?** Dynamic allocation introduces non-deterministic timing, fragmentation, and leak/double-free risks unsuitable for many safety-critical systems.
+
+**How to fix:** Allocate memory statically at compile time.
 
 <table>
 <thead>
@@ -627,7 +657,9 @@ static uint8_t buffer[1024]; /* Compliant: static allocation */
 
 Functions designed to operate on a shared resource (such as lock/unlock or open/close) should be called in a paired, appropriate sequence.
 
-**Fix:** Ensure resources are explicitly cleaned up before returning.
+**Why fix?** Unpaired lock/open sequences cause deadlocks, resource leaks, or use of resources that were never acquired.
+
+**How to fix:** Ensure resources are explicitly cleaned up before returning.
 
 <table>
 <thead>
@@ -674,7 +706,9 @@ void write_data(void) {
 
 The validity of values received from external interfaces (CAN bus, UART, ADC, shared memory) must be validated before processing.
 
-**Fix:** Validate all input boundaries against permissible ranges.
+**Why fix?** Untrusted external data used without validation can cause out-of-bounds access, logic faults, or unsafe actuator commands.
+
+**How to fix:** Validate all input boundaries against permissible ranges.
 
 <table>
 <thead>
@@ -722,7 +756,9 @@ void process_adc_raw(uint16_t adc_val) {
 
 Programs must strictly adhere to ISO C language standards without violating syntax limits or compiler constraints.
 
-**Fix:** Restructure complex nested code blocks to adhere to ISO C bounds and clean syntax.
+**Why fix?** Exceeding language/translation limits produces non-portable or non-compiling code and undefined toolchain behavior.
+
+**How to fix:** Restructure complex nested code blocks to adhere to ISO C bounds and clean syntax.
 
 <table>
 <thead>
@@ -765,7 +801,9 @@ void nested(void) {
 
 Non-standard compiler extensions (such as inline GNU assembly syntax extensions or custom keywords) should not be used unless wrapped and documented.
 
-**Fix:** Use Standard C operators.
+**Why fix?** Compiler extensions lock the project to one toolchain and can change meaning when ported or when options change.
+
+**How to fix:** Use Standard C operators.
 
 <table>
 <thead>
@@ -800,7 +838,9 @@ uint32_t b = a; /* Compliant: Standard C type declaration */
 
 Code shall contain no occurrences of undefined behavior (e.g., dereferencing NULL pointers, shifting by negative offsets) or critical unspecified behavior.
 
-**Fix:** Guard pointers against `NULL` prior to dereferencing.
+**Why fix?** Undefined or critical unspecified behavior can crash, corrupt data, or optimize away logic in surprising ways.
+
+**How to fix:** Guard pointers against `NULL` prior to dereferencing.
 
 <table>
 <thead>
@@ -844,7 +884,9 @@ if (ptr != NULL) {
 
 Code must not contain unreachable logic (statements that can never be executed under any path).
 
-**Fix:** Delete unreachable statements.
+**Why fix?** Unreachable code hides dead paths that reviewers may think are active, reducing confidence in coverage and intent.
+
+**How to fix:** Delete unreachable statements.
 
 <table>
 <thead>
@@ -884,7 +926,9 @@ int compute(void) {
 
 Projects shall not contain dead code (statements whose execution produces no effect on outputs or program state).
 
-**Fix:** Remove operations that produce no side effect.
+**Why fix?** Dead operations waste review attention and can mask mistakes where an effect was intended but never used.
+
+**How to fix:** Remove operations that produce no side effect.
 
 <table>
 <thead>
@@ -925,7 +969,9 @@ void calculate(void) {
 
 Types defined via `typedef` should be removed if they are not used anywhere in the project.
 
-**Fix:** Remove unused `typedef` declarations from headers and source files.
+**Why fix?** Unused typedefs clutter APIs and suggest types that no longer reflect the design.
+
+**How to fix:** Remove unused `typedef` declarations from headers and source files.
 
 <table>
 <thead>
@@ -963,7 +1009,9 @@ Speed_t speed = 0U;
 
 `struct`, `union`, or `enum` tag declarations that are never instantiated or referenced should be removed.
 
-**Fix:** Delete unused tag definitions.
+**Why fix?** Unused tags increase noise and can collide with future names in the same namespace.
+
+**How to fix:** Delete unused tag definitions.
 
 <table>
 <thead>
@@ -1001,7 +1049,9 @@ enum Color c = RED;
 
 Macro definitions (`#define`) that are never expanded within the project should be removed.
 
-**Fix:** Remove unused macro definitions.
+**Why fix?** Unused macros confuse configuration intent and may be expanded accidentally later with wrong values.
+
+**How to fix:** Remove unused macro definitions.
 
 <table>
 <thead>
@@ -1039,7 +1089,9 @@ uint32_t retries = RETRY_COUNT;
 
 Label declarations for `goto` targets should not exist if they are never jumped to.
 
-**Fix:** Delete unused labels.
+**Why fix?** Unused labels imply control-flow paths that do not exist and complicate goto-related analysis.
+
+**How to fix:** Delete unused labels.
 
 <table>
 <thead>
@@ -1079,7 +1131,9 @@ void test(void) {
 
 Parameters defined in a function signature should be used inside the body, or marked/documented if mandated by an interface callback.
 
-**Fix:** Remove unused parameters, or cast them to `(void)` to document intent.
+**Why fix?** Unused parameters often indicate incomplete implementations or mismatched interfaces.
+
+**How to fix:** Remove unused parameters, or cast them to `(void)` to document intent.
 
 <table>
 <thead>
@@ -1123,7 +1177,9 @@ void handle_event(int event_id, int unused_arg) {
 
 Nested comment character sequences (`/*` or `//`) must not be placed inside existing comments, as this leads to unintended code activation/deactivation.
 
-**Fix:** Avoid nesting comment tokens within comments.
+**Why fix?** Nested comment markers can accidentally terminate comments early and leave code commented out or activated unintentionally.
+
+**How to fix:** Avoid nesting comment tokens within comments.
 
 <table>
 <thead>
@@ -1162,7 +1218,9 @@ x = y;
 
 Line-splicing (ending a line with `\`) must not be used at the end of C++ style `//` comments, because it will cause the next code line to be treated as part of the comment.
 
-**Fix:** Remove trailing backslashes from single-line comments.
+**Why fix?** Line-spliced `//` comments can swallow the next source line, silently removing critical statements.
+
+**How to fix:** Remove trailing backslashes from single-line comments.
 
 <table>
 <thead>
@@ -1203,7 +1261,9 @@ execute_critical_safety_routine(); /* Compliant */
 
 Octal and hexadecimal escape sequences in strings must be explicitly terminated (using string concatenation or fixed length) to prevent adjacent characters from being misinterpreted as part of the escape sequence.
 
-**Fix:** Break up string literals to terminate the escape sequence.
+**Why fix?** Ambiguous hex/octal escapes make string contents differ from what the author intended.
+
+**How to fix:** Break up string literals to terminate the escape sequence.
 
 <table>
 <thead>
@@ -1238,7 +1298,9 @@ const char *str = "\x12" "345"; /* Compliant */
 
 Trigraphs (such as `??=` for `#`) should not be used, as they reduce readability and can cause accidental token substitution.
 
-**Fix:** Use standard ASCII preprocessor and operator symbols.
+**Why fix?** Trigraphs silently rewrite source tokens and are easy to miss during review.
+
+**How to fix:** Use standard ASCII preprocessor and operator symbols.
 
 <table>
 <thead>
@@ -1278,7 +1340,9 @@ Trigraphs (such as `??=` for `#`) should not be used, as they reduce readability
 
 External identifiers must be distinct in their first 31 characters to avoid linker collisions on legacy toolchains.
 
-**Fix:** Keep external identifiers distinct within the first 31 characters.
+**Why fix?** Truncated external names can collide at link time, binding the wrong object or function.
+
+**How to fix:** Keep external identifiers distinct within the first 31 characters.
 
 <table>
 <thead>
@@ -1315,7 +1379,9 @@ int ems_param_beta; /* Compliant */
 
 Identifiers declared within the same scope and namespace must be unique.
 
-**Fix:** Ensure distinct variable names within a scope.
+**Why fix?** Duplicate identifiers in one scope make the program ill-formed or ambiguously maintained.
+
+**How to fix:** Ensure distinct variable names within a scope.
 
 <table>
 <thead>
@@ -1358,7 +1424,9 @@ void process(void) {
 
 An identifier declared in an inner scope must not hide an identifier declared in an outer scope.
 
-**Fix:** Rename the inner variable to prevent scope shadowing.
+**Why fix?** Shadowing hides outer objects so reads/writes hit the wrong variable.
+
+**How to fix:** Rename the inner variable to prevent scope shadowing.
 
 <table>
 <thead>
@@ -1401,7 +1469,9 @@ void update(void) {
 
 Macro identifiers must be distinct from other macro identifiers.
 
-**Fix:** Use distinct macro names.
+**Why fix?** Duplicate macro names mean later definitions silently override earlier ones with different values.
+
+**How to fix:** Use distinct macro names.
 
 <table>
 <thead>
@@ -1438,7 +1508,9 @@ Macro identifiers must be distinct from other macro identifiers.
 
 Identifiers shall be distinct from macro names in the same translation unit.
 
-**Fix:** Distinguish variable names from macro names using naming conventions (e.g., ALL_CAPS for macros).
+**Why fix?** Macro/identifier collisions expand unexpectedly and change program meaning.
+
+**How to fix:** Distinguish variable names from macro names using naming conventions (e.g., ALL_CAPS for macros).
 
 <table>
 <thead>
@@ -1475,7 +1547,9 @@ int status_ok = (int)STATUS_OK; /* Compliant: identifier does not collide with m
 
 A `typedef` name shall be a unique identifier across the project.
 
-**Fix:** Avoid redefining existing `typedef` identifiers.
+**Why fix?** Duplicate typedef names create conflicting type meanings across translation units.
+
+**How to fix:** Avoid redefining existing `typedef` identifiers.
 
 <table>
 <thead>
@@ -1512,7 +1586,9 @@ typedef uint16_t rpm_t; /* Compliant: unique typedef names */
 
 Tag names for `struct`, `union`, or `enum` must be unique identifiers across the project.
 
-**Fix:** Use distinct tag names for separate data structures.
+**Why fix?** Duplicate tags make distinct types indistinguishable and break type safety.
+
+**How to fix:** Use distinct tag names for separate data structures.
 
 <table>
 <thead>
@@ -1549,7 +1625,9 @@ union NodeData { int data_int; float data_flt; }; /* Compliant: unique tags */
 
 External linkage objects or functions must have globally unique identifiers.
 
-**Fix:** Rename variables or apply `static` storage specifiers if linkage is internal to a single file.
+**Why fix?** Colliding external identifiers cause link-time conflicts or the wrong definition to be used.
+
+**How to fix:** Rename variables or apply `static` storage specifiers if linkage is internal to a single file.
 
 <table>
 <thead>
@@ -1589,7 +1667,9 @@ static int file2_status = 1; /* Compliant: no external collision */
 
 Identifiers defining objects or functions with internal linkage should be unique across translation units to simplify debugging.
 
-**Fix:** Give file-scope static variables distinct, module-prefixed names.
+**Why fix?** Identical internal names across files hinder debugging and increase copy-paste confusion.
+
+**How to fix:** Give file-scope static variables distinct, module-prefixed names.
 
 <table>
 <thead>
@@ -1630,7 +1710,9 @@ Identifiers defining objects or functions with internal linkage should be unique
 
 Bit-fields shall only be declared with explicitly `signed int` or `unsigned int` types (or `bool`). Generic `int` is implementation-defined regarding signedness.
 
-**Fix:** Explicitly state signedness.
+**Why fix?** Plain `int` bit-fields have implementation-defined signedness, so a 1-bit field may not store the expected 0/1 values.
+
+**How to fix:** Explicitly state signedness.
 
 <table>
 <thead>
@@ -1669,7 +1751,9 @@ struct Flags {
 
 Single-bit named bit-fields must not be declared as signed types, because a 1-bit signed integer can only store values 0 and -1 (not 1).
 
-**Fix:** Declare single-bit fields as `unsigned int` or `bool`.
+**Why fix?** A 1-bit signed bit-field cannot represent 1 portably; only 0 and -1 are available, breaking flag logic.
+
+**How to fix:** Declare single-bit fields as `unsigned int` or `bool`.
 
 <table>
 <thead>
@@ -1712,7 +1796,9 @@ struct Controls {
 
 Octal constants (leading zero, e.g., `012`) must not be used, as they are easily confused with decimal constants.
 
-**Fix:** Use decimal or hexadecimal representations.
+**Why fix?** Octal literals look like decimals but have different values (e.g. `052` is 42), causing constant mistakes.
+
+**How to fix:** Use decimal or hexadecimal representations.
 
 <table>
 <thead>
@@ -1748,7 +1834,9 @@ int hex_code = 0x2AU; /* Compliant hex */
 
 A 'u' or 'U' suffix must be applied to all unsigned integer literal constants to avoid implicit type ambiguity.
 
-**Fix:** Append the `U` suffix to unsigned constants.
+**Why fix?** Missing `U` suffixes can make large constants signed and trigger unexpected promotions or overflow.
+
+**How to fix:** Append the `U` suffix to unsigned constants.
 
 <table>
 <thead>
@@ -1783,7 +1871,9 @@ uint32_t mask = 0x80000000U; /* Compliant */
 
 Lowercase 'l' must not be used in numeric suffixes because it is visually identical to the digit '1'. Always use uppercase 'L'.
 
-**Fix:** Use uppercase `L`.
+**Why fix?** A lowercase `l` suffix looks like digit `1` (e.g. `10l` vs `101`), so reviewers can misread literal values and introduce constant errors.
+
+**How to fix:** Use uppercase `L`.
 
 <table>
 <thead>
@@ -1818,7 +1908,9 @@ int64_t val = 100L; /* Compliant */
 
 String literals must not be assigned to non-const pointers, because writing to string literal memory causes undefined behavior.
 
-**Fix:** Use a pointer to `const char`.
+**Why fix?** Modifying string literals (via non-const pointers) is undefined behavior and may crash or corrupt read-only memory.
+
+**How to fix:** Use a pointer to `const char`.
 
 <table>
 <thead>
@@ -1857,7 +1949,9 @@ const char *str = "Hello"; /* Compliant */
 
 Types must be explicitly specified in all declarations. Implicit `int` defaults are forbidden.
 
-**Fix:** Explicitly state the data type.
+**Why fix?** Implicit `int` and omitted types create portability bugs and wrong widths.
+
+**How to fix:** Explicitly state the data type.
 
 <table>
 <thead>
@@ -1892,7 +1986,9 @@ static int32_t count = 0; /* Compliant */
 
 Function prototypes must be declared in prototype form with named parameters. Empty parameter lists are forbidden (use `void`).
 
-**Fix:** State parameter names and types explicitly or specify `void`.
+**Why fix?** Missing prototypes allow implicit declarations and incorrect argument conversions.
+
+**How to fix:** State parameter names and types explicitly or specify `void`.
 
 <table>
 <thead>
@@ -1927,7 +2023,9 @@ int calculate(void); /* Compliant */
 
 All declarations of an object or function must use identical parameter names, types, and qualifiers across all files.
 
-**Fix:** Use exact matching names across declarations and definitions.
+**Why fix?** Mismatched parameter names/types across declarations hide interface drift and confuse maintenance.
+
+**How to fix:** Use exact matching names across declarations and definitions.
 
 <table>
 <thead>
@@ -1974,7 +2072,9 @@ void update(int value) { /* Compliant: identical parameter name and type */
 
 A compatible declaration must be visible when an object or function with external linkage is defined (i.e., include the corresponding header file).
 
-**Fix:** Include the header file that contains the `extern` declaration.
+**Why fix?** Incompatible declarations/definitions cause undefined behavior when the function is called.
+
+**How to fix:** Include the header file that contains the `extern` declaration.
 
 <table>
 <thead>
@@ -2011,7 +2111,9 @@ int global_sensor_val = 10; /* Compliant */
 
 An external object or function shall be declared in exactly one header file to maintain a single source of truth.
 
-**Fix:** Declare the object in one central header file and `#include` it.
+**Why fix?** Scattered extern declarations drift apart and produce conflicting views of the same object.
+
+**How to fix:** Declare the object in one central header file and `#include` it.
 
 <table>
 <thead>
@@ -2061,7 +2163,9 @@ void use_mode(void) {
 
 An identifier with external linkage must have exactly one definition across the entire project.
 
-**Fix:** Define the variable once in a single `.c` file and reference it via header `extern` declarations elsewhere.
+**Why fix?** Multiple definitions of an external object cause link failures or One Definition Rule-style undefined behavior.
+
+**How to fix:** Define the variable once in a single `.c` file and reference it via header `extern` declarations elsewhere.
 
 <table>
 <thead>
@@ -2107,7 +2211,9 @@ void set_state(int s) {
 
 Functions and objects should be declared `static` (internal linkage) if they are not referenced outside their translation unit.
 
-**Fix:** Add the `static` specifier.
+**Why fix?** Unnecessary external linkage widens visibility and increases accidental coupling and name collisions.
+
+**How to fix:** Add the `static` specifier.
 
 <table>
 <thead>
@@ -2142,7 +2248,9 @@ static int internal_helper(void) { return 1; } /* Compliant */
 
 The `static` keyword must be present on all declarations and definitions of objects and functions with internal linkage.
 
-**Fix:** Place `static` on both the prototype and definition.
+**Why fix?** Inconsistent use of `static` for internal linkage leads to conflicting linkage diagnoses and confusion.
+
+**How to fix:** Place `static` on both the prototype and definition.
 
 <table>
 <thead>
@@ -2179,7 +2287,9 @@ static int foo(void) { return 0; } /* Compliant */
 
 An object should be defined at block scope (inside a function) if it is only accessed within that single function.
 
-**Fix:** Move variable definition inside function block.
+**Why fix?** Block-scope objects that should be file-local increase lifetime and coupling beyond need.
+
+**How to fix:** Move variable definition inside function block.
 
 <table>
 <thead>
@@ -2221,7 +2331,9 @@ void process(void) {
 
 Inline functions must be declared with the `static` storage specifier to prevent symbol linkage ambiguities.
 
-**Fix:** Declare as `static inline`.
+**Why fix?** Inline functions without `static`/`extern` can produce multiple definitions or weak linkage surprises.
+
+**How to fix:** Declare as `static inline`.
 
 <table>
 <thead>
@@ -2256,7 +2368,9 @@ static inline int add(int a, int b) { return a + b; } /* Compliant */
 
 Arrays declared with external linkage should have their size explicitly specified in the `extern` declaration.
 
-**Fix:** Include the array size.
+**Why fix?** Array externs without size lose bound information needed for safe analysis and review.
+
+**How to fix:** Include the array size.
 
 <table>
 <thead>
@@ -2291,7 +2405,9 @@ extern int lookup_table[256]; /* Compliant */
 
 Within an `enum` list, implicit element values must not conflict with explicit values assigned elsewhere in the enum.
 
-**Fix:** Assign unique values to each enum element.
+**Why fix?** Duplicate enumerator values make distinct names interchangeable and break switch/logic assumptions.
+
+**How to fix:** Assign unique values to each enum element.
 
 <table>
 <thead>
@@ -2334,7 +2450,9 @@ enum Mode {
 
 A pointer parameter should point to a `const`-qualified type if the function does not modify the underlying object.
 
-**Fix:** Add `const` qualifier to pointer parameter.
+**Why fix?** Missing `const` on read-only pointees allows accidental mutation and weakens intent.
+
+**How to fix:** Add `const` qualifier to pointer parameter.
 
 <table>
 <thead>
@@ -2373,7 +2491,9 @@ void print_val(const int *p) {
 
 The C99 `restrict` type qualifier shall not be used, as it introduces compiler optimization assumptions that static analysis tools cannot easily verify.
 
-**Fix:** Remove `restrict` qualifier.
+**Why fix?** The `restrict` qualifier is easy to misuse; violated assumptions enable incorrect compiler optimizations.
+
+**How to fix:** Remove `restrict` qualifier.
 
 <table>
 <thead>
@@ -2412,7 +2532,9 @@ void copy(int *dst, const int *src); /* Compliant */
 
 Local stack variables (automatic objects) must be assigned a value before being read.
 
-**Fix:** Initialize local variables upon declaration.
+**Why fix?** Reading uninitialized automatic variables is undefined behavior and yields garbage or traps.
+
+**How to fix:** Initialize local variables upon declaration.
 
 <table>
 <thead>
@@ -2453,7 +2575,9 @@ void compute(void) {
 
 Initializers for nested aggregates (`struct` or array) or unions must be explicitly enclosed in braces `{}`.
 
-**Fix:** Enclose sub-arrays/structures in braces.
+**Why fix?** Incorrect brace nesting in initializers assigns values to the wrong members/elements.
+
+**How to fix:** Enclose sub-arrays/structures in braces.
 
 <table>
 <thead>
@@ -2488,7 +2612,9 @@ int arr[2][2] = { { 1, 2 }, { 3, 4 } }; /* Compliant */
 
 Arrays shall not be partially initialized. Either initialize all elements or none.
 
-**Fix:** Fully initialize all elements or initialize the array to zero completely using `{ 0 }`.
+**Why fix?** Partial array initialization without clear design can leave unexpected zeros and hide missing cases.
+
+**How to fix:** Fully initialize all elements or initialize the array to zero completely using `{ 0 }`.
 
 <table>
 <thead>
@@ -2525,7 +2651,9 @@ int values[5] = { 0 };             /* Compliant complete zero initialization */
 
 An element of an object shall not be initialized more than once in an initializer list.
 
-**Fix:** Ensure each element index is initialized once.
+**Why fix?** Initializing the same element twice makes the final value unclear and error-prone.
+
+**How to fix:** Ensure each element index is initialized once.
 
 <table>
 <thead>
@@ -2560,7 +2688,9 @@ int arr[3] = { [0] = 1, [1] = 2, [2] = 3 }; /* Compliant: each element once */
 
 Where designated initializers are used for array objects, the array size must be explicitly declared in the type definition.
 
-**Fix:** Explicitly state array dimension.
+**Why fix?** Designated initializers without an explicit size can create surprising array lengths.
+
+**How to fix:** Explicitly state array dimension.
 
 <table>
 <thead>
@@ -2599,7 +2729,9 @@ int arr[3] = { [0] = 1, [2] = 5 }; /* Compliant */
 
 Operands shall not be used with inappropriate essential types (e.g., performing bitwise operations on signed integers or using floating-point types as array indexes).
 
-**Fix:** Cast or operate on explicit unsigned integer types.
+**Why fix?** Inappropriate essential-type operands (e.g. booleans in arithmetic) produce misleading results and review errors.
+
+**How to fix:** Cast or operate on explicit unsigned integer types.
 
 <table>
 <thead>
@@ -2636,7 +2768,9 @@ uint32_t res = val << 2U; /* Compliant */
 
 Expressions of character type shall not be used in inappropriate arithmetic contexts (e.g., adding numbers directly to raw character types).
 
-**Fix:** Perform arithmetic on an explicit integer conversion of the character value.
+**Why fix?** Character arithmetic is not portable across signedness/encodings and can overflow or wrap unexpectedly.
+
+**How to fix:** Perform arithmetic on an explicit integer conversion of the character value.
 
 <table>
 <thead>
@@ -2674,7 +2808,9 @@ char next = (char)((int32_t)c + offset); /* Compliant: explicit integer arithmet
 
 An expression value shall not be assigned to an object with a narrower essential type or a different type category without an explicit cast.
 
-**Fix:** Add an explicit cast to acknowledge truncation.
+**Why fix?** Assigning a wider/different essential type truncates or reinterprets values incorrectly.
+
+**How to fix:** Add an explicit cast to acknowledge truncation.
 
 <table>
 <thead>
@@ -2711,7 +2847,9 @@ small = (uint8_t)big; /* Compliant */
 
 Both operands of a binary operator must have the same essential type category (e.g., do not mix signed and unsigned types in addition).
 
-**Fix:** Cast one operand explicitly so types match.
+**Why fix?** Usual arithmetic conversions between essentially different types change signedness/width and can wrap.
+
+**How to fix:** Cast one operand explicitly so types match.
 
 <table>
 <thead>
@@ -2748,7 +2886,9 @@ uint32_t res = u + (uint32_t)s; /* Compliant */
 
 The value of an expression should not be explicitly cast to an inappropriate essential type (e.g., casting a float to an enum).
 
-**Fix:** Convert through intermediate integer types or explicit mapping logic.
+**Why fix?** Casting across inappropriate essential types (e.g. float to enum) invents invalid values.
+
+**How to fix:** Convert through intermediate integer types or explicit mapping logic.
 
 <table>
 <thead>
@@ -2795,7 +2935,9 @@ if (mode_id == 0) {
 
 The value of a composite expression (e.g., `a + b`) shall not be assigned to an object of wider essential type without casting an operand first to prevent hidden overflow.
 
-**Fix:** Cast an operand to the wider type prior to addition.
+**Why fix?** Composite expressions assigned to a wider type without explicit casts hide intermediate overflow.
+
+**How to fix:** Cast an operand to the wider type prior to addition.
 
 <table>
 <thead>
@@ -2832,7 +2974,9 @@ uint32_t total = (uint32_t)a + b; /* Compliant */
 
 Operands of a composite expression shall not undergo implicit conversions to wider types when combined with wider variables.
 
-**Fix:** Explicitly cast operands to wider types before the composite operation.
+**Why fix?** Implicit widening of a composite expression with a wider operand can overflow before the widen happens.
+
+**How to fix:** Explicitly cast operands to wider types before the composite operation.
 
 <table>
 <thead>
@@ -2873,7 +3017,9 @@ uint32_t res = ((uint32_t)a + (uint32_t)b) + c; /* Compliant: explicit wider cas
 
 The value of a composite expression shall not be cast to a different essential type category or wider type.
 
-**Fix:** Cast individual operands before computing composite result.
+**Why fix?** Casting composite expressions to a different essential type obscures overflow and conversion intent.
+
+**How to fix:** Cast individual operands before computing composite result.
 
 <table>
 <thead>
@@ -2914,7 +3060,9 @@ uint32_t res = (uint32_t)a + (uint32_t)b; /* Compliant */
 
 Conversions shall not be performed between a pointer to a function and any other type (including object pointers or integers).
 
-**Fix:** Keep function pointers distinct; do not cast them to generic object pointers.
+**Why fix?** Casting function pointers to other types is undefined when called and breaks calling conventions.
+
+**How to fix:** Keep function pointers distinct; do not cast them to generic object pointers.
 
 <table>
 <thead>
@@ -2954,7 +3102,9 @@ fp();
 
 Conversions shall not be performed between a pointer to an incomplete type and any other type.
 
-**Fix:** Avoid type casting opaque structure handles; pass and store them as the opaque pointer type.
+**Why fix?** Converting incomplete-type pointers loses type safety and can create invalid object access.
+
+**How to fix:** Avoid type casting opaque structure handles; pass and store them as the opaque pointer type.
 
 <table>
 <thead>
@@ -2994,7 +3144,9 @@ void use_handle(struct Opaque *p) {
 
 A cast shall not be performed between a pointer to an object type and a pointer to a different object type due to alignment fault risks.
 
-**Fix:** Use `memcpy` to copy bytes safely between different types.
+**Why fix?** Casting between incompatible object pointer types can violate alignment and aliasing rules.
+
+**How to fix:** Use `memcpy` to copy bytes safely between different types.
 
 <table>
 <thead>
@@ -3032,7 +3184,9 @@ uint32_t val;
 
 Conversions should not be performed between a pointer to an object and an integer type unless addressing hardware memory-mapped registers.
 
-**Fix:** Avoid treating pointers as integers in general software logic; keep pointer types intact.
+**Why fix?** Pointer/integer conversions are non-portable and can truncate addresses or create invalid pointers.
+
+**How to fix:** Avoid treating pointers as integers in general software logic; keep pointer types intact.
 
 <table>
 <thead>
@@ -3070,7 +3224,9 @@ int *px = &x; /* Compliant: pointer retained as pointer type */
 
 Conversion should not be performed from a pointer to `void` into a pointer to an object type.
 
-**Fix:** Pass typed object pointers directly whenever possible.
+**Why fix?** Converting `void *` to object pointers without care can hide type and alignment errors.
+
+**How to fix:** Pass typed object pointers directly whenever possible.
 
 <table>
 <thead>
@@ -3107,7 +3263,9 @@ uint32_t *iptr = get_buffer(); /* Compliant: typed pointer, no void* cast */
 
 Casts shall not be performed between a pointer to `void` and an arithmetic type (integer or float).
 
-**Fix:** Do not convert between `void *` and arithmetic types. Keep pointers typed, or obtain addresses from typed APIs.
+**Why fix?** Casts between `void *` and arithmetic types are not portable and can corrupt pointer representation.
+
+**How to fix:** Do not convert between `void *` and arithmetic types. Keep pointers typed, or obtain addresses from typed APIs.
 
 <table>
 <thead>
@@ -3144,7 +3302,9 @@ volatile uint32_t *const reg = get_reg_block();
 
 Casts shall not be performed between a pointer to an object and a non-integer arithmetic type (such as `float`).
 
-**Fix:** Use standard `memcpy` operations for bit pattern analysis.
+**Why fix?** Casting object pointers to non-integer arithmetic types is undefined/meaningless and breaks aliasing.
+
+**How to fix:** Use standard `memcpy` operations for bit pattern analysis.
 
 <table>
 <thead>
@@ -3182,7 +3342,9 @@ uint32_t bits = 0U;
 
 Casts shall not remove `const` or `volatile` qualification from a pointer's referenced type.
 
-**Fix:** Retain `const` qualifiers throughout parameter chains and mutate only non-const objects.
+**Why fix?** Casting away `const`/`volatile` allows illegal modification or tearing of hardware-mapped values.
+
+**How to fix:** Retain `const` qualifiers throughout parameter chains and mutate only non-const objects.
 
 <table>
 <thead>
@@ -3227,7 +3389,9 @@ void read_data(const int *p) {
 
 The macro `NULL` shall be the only permitted form of null pointer constant (do not use raw `0`).
 
-**Fix:** Use `NULL`.
+**Why fix?** Using integer `0` instead of `NULL` for pointers reduces clarity and can confuse overload/macro contexts.
+
+**How to fix:** Use `NULL`.
 
 <table>
 <thead>
@@ -3266,7 +3430,9 @@ int *ptr = NULL; /* Compliant */
 
 Precedence of operators within complex expressions should be made explicit using parentheses.
 
-**Fix:** Add explicit parenthesized groupings.
+**Why fix?** Unparenthesized mixed-precedence expressions are misread and evaluated differently than intended.
+
+**How to fix:** Add explicit parenthesized groupings.
 
 <table>
 <thead>
@@ -3301,7 +3467,9 @@ int res = (a + b) << (c * d); /* Compliant */
 
 The right-hand operand of a shift operator must be greater than or equal to 0 and strictly less than the bit-width of the left operand.
 
-**Fix:** Ensure shift amounts stay strictly within 0 to (width - 1).
+**Why fix?** Shift amounts outside the bit-width of the type are undefined behavior.
+
+**How to fix:** Ensure shift amounts stay strictly within 0 to (width - 1).
 
 <table>
 <thead>
@@ -3337,7 +3505,9 @@ uint32_t res = val << 31U; /* Compliant */
 
 The comma operator `,` should not be used to sequence expressions.
 
-**Fix:** Split expressions onto separate lines.
+**Why fix?** The comma operator hides multiple side effects in one expression and hurts readability/analysis.
+
+**How to fix:** Split expressions onto separate lines.
 
 <table>
 <thead>
@@ -3373,7 +3543,9 @@ b = 2; /* Compliant */
 
 Evaluation of constant expressions should not lead to unsigned integer wrap-around.
 
-**Fix:** Use explicit maximum macros (e.g., `UINT32_MAX`).
+**Why fix?** Unsigned wrap in expressions that look like simple constants can produce surprising values.
+
+**How to fix:** Use explicit maximum macros (e.g., `UINT32_MAX`).
 
 <table>
 <thead>
@@ -3412,7 +3584,9 @@ uint32_t x = UINT32_MAX; /* Compliant */
 
 Initializer lists shall not contain persistent side effects.
 
-**Fix:** Increment variables outside the initializer list.
+**Why fix?** Initializer lists with volatile/side-effect expressions have unspecified evaluation order.
+
+**How to fix:** Increment variables outside the initializer list.
 
 <table>
 <thead>
@@ -3452,7 +3626,9 @@ i++; /* Compliant */
 
 Expression evaluation order shall not rely on unsequenced side effects.
 
-**Fix:** Separate increments onto separate statements.
+**Why fix?** Expressions with multiple side effects on overlapping values have undefined/unspecified order.
+
+**How to fix:** Separate increments onto separate statements.
 
 <table>
 <thead>
@@ -3490,7 +3666,9 @@ x++; /* Compliant */
 
 Increment (`++`) and decrement (`--`) operators should not be mixed with other operators in the same expression.
 
-**Fix:** Isolate increment/decrement on their own standalone line.
+**Why fix?** Increment/decrement embedded in larger expressions obscures sequencing and invites undefined behavior.
+
+**How to fix:** Isolate increment/decrement on their own standalone line.
 
 <table>
 <thead>
@@ -3526,7 +3704,9 @@ a++; /* Compliant */
 
 The result of an assignment operator should not be used inside expressions or condition tests.
 
-**Fix:** Perform assignment prior to evaluating the condition.
+**Why fix?** Assignment inside controlling expressions hides state changes and makes boolean intent unclear.
+
+**How to fix:** Perform assignment prior to evaluating the condition.
 
 <table>
 <thead>
@@ -3562,7 +3742,9 @@ if (x != 0) { /* Compliant */ }
 
 The right-hand side of logical operators (`&&` or `||`) must not contain side effects because short-circuit evaluation makes execution conditional.
 
-**Fix:** Evaluate functions with side effects prior to the logical condition.
+**Why fix?** Right-hand operands of `&&`/`||` with side effects may or may not run, causing intermittent bugs.
+
+**How to fix:** Evaluate functions with side effects prior to the logical condition.
 
 <table>
 <thead>
@@ -3598,7 +3780,9 @@ if (flag && (status > 0)) { /* Compliant */ }
 
 The operand of the `sizeof` operator must not contain expressions with side effects, because `sizeof` does not evaluate its operand at runtime.
 
-**Fix:** Pass only types or variables to `sizeof`.
+**Why fix?** Modifying an operand of `sizeof` suggests a side effect that never happens (except VLAs), confusing readers.
+
+**How to fix:** Pass only types or variables to `sizeof`.
 
 <table>
 <thead>
@@ -3637,7 +3821,9 @@ size_t s = sizeof(i); /* Compliant */
 
 A loop counter shall not have an essential floating-point type due to accumulation of rounding errors.
 
-**Fix:** Use integer loop counters and calculate float equivalents inside.
+**Why fix?** Floating loop counters accumulate rounding error and may iterate the wrong number of times.
+
+**How to fix:** Use integer loop counters and calculate float equivalents inside.
 
 <table>
 <thead>
@@ -3674,7 +3860,9 @@ for (uint32_t i = 0U; i < 10U; i++) {
 
 A `for` loop shall be well-formed with a single loop counter modified consistently in the loop clause.
 
-**Fix:** Control a single loop variable in the `for` statement header.
+**Why fix?** Ill-formed `for` loops with multiple counters are hard to reason about and easy to make non-terminating.
+
+**How to fix:** Control a single loop variable in the `for` statement header.
 
 <table>
 <thead>
@@ -3716,7 +3904,9 @@ for (int i = 0; i < 10; i++) { /* Compliant: single loop counter */
 
 Controlling expressions in conditional statements shall not evaluate to invariant constants (always true or always false).
 
-**Fix:** Remove redundant conditions and keep only meaningful checks.
+**Why fix?** Invariant conditions mean dead or always-taken branches, often signaling logic mistakes.
+
+**How to fix:** Remove redundant conditions and keep only meaningful checks.
 
 <table>
 <thead>
@@ -3757,7 +3947,9 @@ if (u > 0U) { /* Compliant: meaningful, non-invariant condition */
 
 The controlling expression of an `if`, `while`, or `for` statement must have essential Boolean type (not raw integers or pointers).
 
-**Fix:** Use explicit comparison to return a boolean evaluation.
+**Why fix?** Non-boolean controlling expressions rely on implicit zero/non-zero tests that hide intent and bugs.
+
+**How to fix:** Use explicit comparison to return a boolean evaluation.
 
 <table>
 <thead>
@@ -3797,7 +3989,9 @@ if (status != 0) { /* Compliant */ }
 
 The `goto` statement should not be used.
 
-**Fix:** Refactor using standard control structures (`if`/`else` or helper cleanup functions).
+**Why fix?** `goto` creates unstructured control flow that is hard to test, review, and prove correct.
+
+**How to fix:** Refactor using standard control structures (`if`/`else` or helper cleanup functions).
 
 <table>
 <thead>
@@ -3844,7 +4038,9 @@ void process(bool error) {
 
 `goto` shall only jump to a label declared later in the same function (no backward jumps).
 
-**Fix:** Use a `while` or `do-while` loop for backward repetition.
+**Why fix?** Backward `goto` creates loops that are harder to analyze than structured iteration constructs.
+
+**How to fix:** Use a `while` or `do-while` loop for backward repetition.
 
 <table>
 <thead>
@@ -3889,7 +4085,9 @@ void retry_work(bool retry) {
 
 Any label referenced by `goto` shall be declared in the same block or an enclosing block.
 
-**Fix:** Restructure code flow to enter nested blocks normally, or place the label in an enclosing block.
+**Why fix?** Jumping into nested blocks can skip initialization and enter scopes with invalid state.
+
+**How to fix:** Restructure code flow to enter nested blocks normally, or place the label in an enclosing block.
 
 <table>
 <thead>
@@ -3936,7 +4134,9 @@ void process(bool fail) {
 
 There should be no more than one `break` or `goto` statement used to terminate any single loop block.
 
-**Fix:** Combine loop termination conditions into the main loop control clause.
+**Why fix?** Multiple loop exits make termination conditions harder to see and verify.
+
+**How to fix:** Combine loop termination conditions into the main loop control clause.
 
 <table>
 <thead>
@@ -3980,7 +4180,9 @@ for (int i = 0; (i < 10) && (!cond1) && (!cond2); i++) {
 
 A function should have a single point of exit at the end of the function.
 
-**Fix:** Use a single return variable set during logic processing.
+**Why fix?** Multiple `return` points duplicate cleanup and increase the chance of missing a release path.
+
+**How to fix:** Use a single return variable set during logic processing.
 
 <table>
 <thead>
@@ -4024,7 +4226,9 @@ int check(int x) {
 
 The body of an `if`, `else`, `while`, `do-while`, or `for` statement shall be a compound statement enclosed in curly braces `{}`.
 
-**Fix:** Always enclose the body in `{}`.
+**Why fix?** Missing braces cause dangling-else and accidental single-statement body mistakes.
+
+**How to fix:** Always enclose the body in `{}`.
 
 <table>
 <thead>
@@ -4062,7 +4266,9 @@ if (flag) {
 
 All `if ... else if` chains shall be terminated with a final `else` clause (even if empty with a comment).
 
-**Fix:** Add a terminating `else` block.
+**Why fix?** An `if`/`else if` chain without a final `else` leaves unmatched cases unhandled and unlogged.
+
+**How to fix:** Add a terminating `else` block.
 
 <table>
 <thead>
@@ -4111,7 +4317,9 @@ if (x == 1) {
 
 All `switch` statements shall be well-formed syntax blocks (syntax and structure required by the switch rules set).
 
-**Fix:** Use a braced `switch` body with properly formed clauses.
+**Why fix?** Ill-formed switch structure leads to fall-through mistakes and unreachable/incorrect cases.
+
+**How to fix:** Use a braced `switch` body with properly formed clauses.
 
 <table>
 <thead>
@@ -4159,7 +4367,9 @@ switch (mode) {
 
 A `switch` label shall only be used when directly enclosed in the outermost body of a `switch` statement (Duff's Device is forbidden).
 
-**Fix:** Place `case` labels cleanly at top level of `switch`.
+**Why fix?** Case labels inside nested statements (e.g. Duff's device) create unreadable, error-prone control flow.
+
+**How to fix:** Place `case` labels cleanly at top level of `switch`.
 
 <table>
 <thead>
@@ -4207,7 +4417,9 @@ switch (mark) {
 
 An unconditional `break` statement shall terminate every non-empty `case` clause (no implicit fall-through).
 
-**Fix:** Add `break;` at the end of every non-empty `case`.
+**Why fix?** Missing `break` causes unintentional fall-through and executes the wrong case body.
+
+**How to fix:** Add `break;` at the end of every non-empty `case`.
 
 <table>
 <thead>
@@ -4255,7 +4467,9 @@ switch (val) {
 
 Every `switch` statement shall contain an explicit `default` clause.
 
-**Fix:** Add a `default` case to handle unexpected inputs.
+**Why fix?** A switch without `default` leaves unexpected values unhandled.
+
+**How to fix:** Add a `default` case to handle unexpected inputs.
 
 <table>
 <thead>
@@ -4295,7 +4509,9 @@ switch (val) {
 
 The `default` clause shall appear as either the first or last clause in a `switch` statement.
 
-**Fix:** Move `default:` to the very end (or very beginning) of the `switch` block.
+**Why fix?** A `default` clause in the middle of cases is easy to miss during review and maintenance.
+
+**How to fix:** Move `default:` to the very end (or very beginning) of the `switch` block.
 
 <table>
 <thead>
@@ -4350,7 +4566,9 @@ switch (val) {
 
 Every `switch` statement shall contain at least two `case` clauses.
 
-**Fix:** Use an `if` statement for single-condition tests, or add the missing cases.
+**Why fix?** A switch with fewer than two cases is misleading; an `if` would express the decision more clearly.
+
+**How to fix:** Use an `if` statement for single-condition tests, or add the missing cases.
 
 <table>
 <thead>
@@ -4393,7 +4611,9 @@ if (val == 1) {
 
 The controlling expression of a `switch` statement shall not have essential Boolean type.
 
-**Fix:** Use an `if-else` statement for boolean conditions.
+**Why fix?** Switching on a boolean forces awkward case structure where `if`/`else` is clearer and safer.
+
+**How to fix:** Use an `if-else` statement for boolean conditions.
 
 <table>
 <thead>
@@ -4443,7 +4663,9 @@ if (x == 5) {
 
 Variable length argument features from `<stdarg.h>` (`va_list`, `va_arg`, `va_start`) shall not be used due to lack of type safety.
 
-**Fix:** Pass explicit typed arrays or structured parameters.
+**Why fix?** Variadic functions bypass type checking and can read the wrong argument types/sizes.
+
+**How to fix:** Pass explicit typed arrays or structured parameters.
 
 <table>
 <thead>
@@ -4482,7 +4704,9 @@ void log_err(const char *message, int32_t error_code) {
 
 Functions shall not call themselves directly or indirectly (no recursion) to guarantee bounded stack memory usage.
 
-**Fix:** Rewrite using iterative loops.
+**Why fix?** Recursion risks unbounded stack growth and non-deterministic resource use.
+
+**How to fix:** Rewrite using iterative loops.
 
 <table>
 <thead>
@@ -4525,7 +4749,9 @@ uint32_t factorial(uint32_t n) {
 
 Functions shall not be declared implicitly. Prototype headers must be included before invocation.
 
-**Fix:** Declare the function prototype before use.
+**Why fix?** Implicit function declarations assume wrong return/argument types and cause undefined behavior at the call.
+
+**How to fix:** Declare the function prototype before use.
 
 <table>
 <thead>
@@ -4566,7 +4792,9 @@ void test(void) {
 
 All exit paths from a function returning a non-void value shall return an explicit expression.
 
-**Fix:** Ensure all paths return a value.
+**Why fix?** Missing `return` in a non-void function yields undefined values to callers.
+
+**How to fix:** Ensure all paths return a value.
 
 <table>
 <thead>
@@ -4608,7 +4836,9 @@ int val(int x) {
 
 Function argument declarations using array notation should match expected array dimensions.
 
-**Fix:** Ensure caller array allocations match parameter boundary specs.
+**Why fix?** Array parameter size mismatches let callers pass buffers that are too small, causing overruns.
+
+**How to fix:** Ensure caller array allocations match parameter boundary specs.
 
 <table>
 <thead>
@@ -4653,7 +4883,9 @@ void caller(void) {
 
 The `static` keyword inside array parameter declarations (`void fn(int arr[static 10])`) shall not be used.
 
-**Fix:** Use standard pointer or fixed-size array notation without `static`.
+**Why fix?** `static` array bounds in parameters are subtle, poorly supported for checking, and easy to misuse.
+
+**How to fix:** Use standard pointer or fixed-size array notation without `static`.
 
 <table>
 <thead>
@@ -4688,7 +4920,9 @@ void fn(int arr[5]); /* Compliant: no static array bound in parameter */
 
 The value returned by a function having a non-void return type shall be used or explicitly cast to `(void)`.
 
-**Fix:** Cast ignored return values explicitly to `(void)`.
+**Why fix?** Ignoring non-void return values discards status/results the callee expected the caller to handle.
+
+**How to fix:** Cast ignored return values explicitly to `(void)`.
 
 <table>
 <thead>
@@ -4723,7 +4957,9 @@ calculate_data(); /* Non-compliant: return value ignored */
 
 Function parameters should not be modified within the function body (treat parameters as read-only inputs).
 
-**Fix:** Copy parameter to a local stack variable.
+**Why fix?** Modifying function parameters can confuse readers who expect arguments to retain caller values.
+
+**How to fix:** Copy parameter to a local stack variable.
 
 <table>
 <thead>
@@ -4767,7 +5003,9 @@ void process(int val) {
 
 Pointer arithmetic shall stay strictly within array bounds.
 
-**Fix:** Keep pointer indices within bounds `[0 ... SIZE-1]` (one-past-end is allowed only for comparison, not dereference).
+**Why fix?** Pointer arithmetic outside array bounds is undefined behavior and can corrupt adjacent memory.
+
+**How to fix:** Keep pointer indices within bounds `[0 ... SIZE-1]` (one-past-end is allowed only for comparison, not dereference).
 
 <table>
 <thead>
@@ -4805,7 +5043,9 @@ int *p = &arr[4]; /* Compliant: within bounds */
 
 Subtraction between pointers shall only be applied when both point to elements within the same array.
 
-**Fix:** Subtract pointers only within shared array structures.
+**Why fix?** Subtracting unrelated pointers is undefined and produces meaningless distances.
+
+**How to fix:** Subtract pointers only within shared array structures.
 
 <table>
 <thead>
@@ -4844,7 +5084,9 @@ ptrdiff_t diff = &a[4] - &a[1]; /* Compliant: same array object */
 
 Relational operators (`<`, `<=`, `>`, `>=`) shall not be applied to pointers pointing to different memory objects.
 
-**Fix:** Perform relational comparisons only on pointers within the same array.
+**Why fix?** Relational compares of unrelated pointers are undefined and can mis-order memory regions.
+
+**How to fix:** Perform relational comparisons only on pointers within the same array.
 
 <table>
 <thead>
@@ -4887,7 +5129,9 @@ if (p < q) { /* Compliant: both point into array a */
 
 Pointer arithmetic (`+`, `-`, `+=`, `-=`) should not be used. Array indexing `[]` should be used instead.
 
-**Fix:** Use array subscript notation.
+**Why fix?** Using pointer `+/-` instead of array indexing makes bounds harder to see and review.
+
+**How to fix:** Use array subscript notation.
 
 <table>
 <thead>
@@ -4923,7 +5167,9 @@ arr[2] = 10; /* Compliant */
 
 Declarations should not contain more than two levels of pointer indirection (avoid `***p`).
 
-**Fix:** Simplify data models or wrap pointers in structures.
+**Why fix?** Deep pointer indirection is hard to reason about and increases null/aliasing defect risk.
+
+**How to fix:** Simplify data models or wrap pointers in structures.
 
 <table>
 <thead>
@@ -4962,7 +5208,9 @@ RowRef *table; /* Compliant: at most two levels of indirection */
 
 The address of an automatic storage object shall not be assigned to an object that outlives the function return.
 
-**Fix:** Assign addresses of static or global variables only, or copy the value instead of the address.
+**Why fix?** Storing the address of an automatic object past its lifetime creates dangling pointers.
+
+**How to fix:** Assign addresses of static or global variables only, or copy the value instead of the address.
 
 <table>
 <thead>
@@ -5007,7 +5255,9 @@ void setup(void) {
 
 Flexible array members (`struct { int n; int arr[]; }`) shall not be declared.
 
-**Fix:** Declare array fields with explicit maximum sizes.
+**Why fix?** Flexible array members complicate allocation size math and are easy to under-allocate.
+
+**How to fix:** Declare array fields with explicit maximum sizes.
 
 <table>
 <thead>
@@ -5050,7 +5300,9 @@ struct Packet {
 
 Variable-length array (VLA) types shall not be used because stack sizing cannot be determined at compile time.
 
-**Fix:** Use compile-time constant array dimensions.
+**Why fix?** Variable length arrays make stack usage non-deterministic and can overflow the stack.
+
+**How to fix:** Use compile-time constant array dimensions.
 
 <table>
 <thead>
@@ -5094,7 +5346,9 @@ void process(int n) {
 
 Memory objects shall not be copied or assigned to overlapping objects (e.g., using `memcpy` on overlapping regions).
 
-**Fix:** Use `memmove` for overlapping memory regions.
+**Why fix?** Overlapping object assignment (e.g. partial overlap) is undefined behavior.
+
+**How to fix:** Use `memmove` for overlapping memory regions.
 
 <table>
 <thead>
@@ -5130,7 +5384,9 @@ memcpy(&buf[2], &buf[0], 5); /* Non-compliant: overlapping memory */
 
 The `union` keyword should not be used, as it allows type punning and unintended bit reinterpretation.
 
-**Fix:** Use explicit structure containers with type flags.
+**Why fix?** Unions enable type punning that can violate aliasing and produce unexpected representations.
+
+**How to fix:** Use explicit structure containers with type flags.
 
 <table>
 <thead>
@@ -5181,7 +5437,9 @@ typedef struct {
 
 `#include` directives should only be preceded by preprocessor directives or comments (not C statements).
 
-**Fix:** Place all `#include` lines at the top of the file.
+**Why fix?** `#include` after code makes inclusion order and macro state harder to predict.
+
+**How to fix:** Place all `#include` lines at the top of the file.
 
 <table>
 <thead>
@@ -5219,7 +5477,9 @@ int x = 0;
 
 Characters `'`, `"`, `\`, or `/*` shall not occur in `#include` header names.
 
-**Fix:** Use forward slashes `/` in paths.
+**Why fix?** Special characters in header names are non-portable and can break preprocessing.
+
+**How to fix:** Use forward slashes `/` in paths.
 
 <table>
 <thead>
@@ -5254,7 +5514,9 @@ Characters `'`, `"`, `\`, or `/*` shall not occur in `#include` header names.
 
 `#include` directives shall be followed by `<filename>` or `"filename"`.
 
-**Fix:** Use double quotes or angle brackets.
+**Why fix?** Malformed `#include` lines may be ignored or interpreted differently by toolchains.
+
+**How to fix:** Use double quotes or angle brackets.
 
 <table>
 <thead>
@@ -5291,7 +5553,9 @@ Characters `'`, `"`, `\`, or `/*` shall not occur in `#include` header names.
 
 Macro names shall not shadow C language keywords.
 
-**Fix:** Do not redefine standard C keywords; use distinct macro names.
+**Why fix?** Redefining keywords breaks the language and produces unreadable, non-portable code.
+
+**How to fix:** Do not redefine standard C keywords; use distinct macro names.
 
 <table>
 <thead>
@@ -5326,7 +5590,9 @@ Macro names shall not shadow C language keywords.
 
 `#undef` should not be used to undefine macros.
 
-**Fix:** Use unique macro names instead of undefining and redefining.
+**Why fix?** `#undef` makes macro availability order-dependent and fragile across includes.
+
+**How to fix:** Use unique macro names instead of undefining and redefining.
 
 <table>
 <thead>
@@ -5364,7 +5630,9 @@ Macro names shall not shadow C language keywords.
 
 Macro arguments shall not expand into preprocessor directives.
 
-**Fix:** Keep macro arguments restricted to pure expressions.
+**Why fix?** Macro arguments that expand into directives can inject unexpected preprocessing control flow.
+
+**How to fix:** Keep macro arguments restricted to pure expressions.
 
 <table>
 <thead>
@@ -5401,7 +5669,9 @@ int y = SCALE(3); /* Compliant: expression argument only */
 
 Every parameter expanded within a macro definition shall be enclosed in parentheses.
 
-**Fix:** Parenthesize parameters.
+**Why fix?** Unparenthesized macro parameters can mis-bind operators when expanded in expressions.
+
+**How to fix:** Parenthesize parameters.
 
 <table>
 <thead>
@@ -5436,7 +5706,9 @@ Every parameter expanded within a macro definition shall be enclosed in parenthe
 
 Controlling expressions of `#if` or `#elif` shall evaluate to 0 or 1.
 
-**Fix:** Compare explicitly against values so the result is 0 or 1.
+**Why fix?** Controlling expressions that are not 0/1 make conditional compilation intent unclear and error-prone.
+
+**How to fix:** Compare explicitly against values so the result is 0 or 1.
 
 <table>
 <thead>
@@ -5473,7 +5745,9 @@ Controlling expressions of `#if` or `#elif` shall evaluate to 0 or 1.
 
 All identifiers used in `#if` or `#elif` expressions shall be defined before evaluation.
 
-**Fix:** Use `defined()` checks first.
+**Why fix?** Undefined identifiers in `#if` silently become 0, enabling the wrong configuration branch.
+
+**How to fix:** Use `defined()` checks first.
 
 <table>
 <thead>
@@ -5510,7 +5784,9 @@ All identifiers used in `#if` or `#elif` expressions shall be defined before eva
 
 The `#` (stringification) and `##` (token pasting) preprocessor operators should not be used.
 
-**Fix:** Declare variables explicitly without macro concatenation.
+**Why fix?** `#`/`##` create tokens that are hard to debug and can form unexpected identifiers/strings.
+
+**How to fix:** Declare variables explicitly without macro concatenation.
 
 <table>
 <thead>
@@ -5546,7 +5822,9 @@ int var_count; /* Compliant: explicit declaration */
 
 A macro parameter immediately following a `#` operator shall not be immediately followed by a `##` operator.
 
-**Fix:** Avoid combining `#` and `##` on the same parameter; prefer explicit identifiers or separate macros.
+**Why fix?** Combining `#` immediately with `##` yields invalid or surprising token sequences.
+
+**How to fix:** Avoid combining `#` and `##` on the same parameter; prefer explicit identifiers or separate macros.
 
 <table>
 <thead>
@@ -5582,7 +5860,9 @@ uint32_t timeout = TIMEOUT_MS; /* Compliant: no # or ## operators */
 
 A macro parameter used as an operand to the `#` or `##` operators, which is itself subject to further macro replacement, shall only be used as an operand to these operators (not also expanded normally in the same replacement list).
 
-**Fix:** Do not mix stringification/pasting of a parameter with normal expansion of that same parameter; prefer explicit code.
+**Why fix?** Expanding a parameter both normally and with `#`/`##` makes substitution order hard to predict.
+
+**How to fix:** Do not mix stringification/pasting of a parameter with normal expansion of that same parameter; prefer explicit code.
 
 <table>
 <thead>
@@ -5618,7 +5898,9 @@ const char *label = NAME; /* Compliant: no mixed #/## parameter use */
 
 A line whose first token is `#` shall be a valid preprocessing directive.
 
-**Fix:** Use only valid preprocessor directives (`#include`, `#define`, `#if`, `#endif`, etc.).
+**Why fix?** Invalid `#` lines are undefined in the preprocessor and can be ignored or abort preprocessing.
+
+**How to fix:** Use only valid preprocessor directives (`#include`, `#define`, `#if`, `#endif`, etc.).
 
 <table>
 <thead>
@@ -5653,7 +5935,9 @@ A line whose first token is `#` shall be a valid preprocessing directive.
 
 All `#if`, `#ifdef`, `#ifndef` directives must be terminated with `#endif` in the same file.
 
-**Fix:** Ensure balanced conditional preprocessor directives in every file.
+**Why fix?** Unterminated conditional inclusion leaves large regions of code accidentally excluded or included.
+
+**How to fix:** Ensure balanced conditional preprocessor directives in every file.
 
 <table>
 <thead>
@@ -5700,7 +5984,9 @@ void api(void);
 
 `#define` and `#undef` shall not be used on standard library reserved identifiers or macros.
 
-**Fix:** Include the appropriate standard header for reserved macros/identifiers.
+**Why fix?** Redefining standard reserved macros like `NULL` breaks library contracts and portability.
+
+**How to fix:** Include the appropriate standard header for reserved macros/identifiers.
 
 <table>
 <thead>
@@ -5736,7 +6022,9 @@ void *p = NULL; /* Compliant: NULL from standard header */
 
 Reserved identifiers (such as names starting with `_` or `__`) shall not be declared for user functions/objects.
 
-**Fix:** Remove leading underscores from identifier names.
+**Why fix?** User identifiers in reserved name spaces collide with the implementation and future library versions.
+
+**How to fix:** Remove leading underscores from identifier names.
 
 <table>
 <thead>
@@ -5771,7 +6059,9 @@ int my_var = 0; /* Compliant */
 
 `<stdlib.h>` dynamic memory functions (`malloc`, `calloc`, `realloc`, `free`) shall not be used.
 
-**Fix:** Use static object declarations or fixed-size buffers.
+**Why fix?** `malloc`/`free` bring non-determinism, fragmentation, leaks, and heap corruption risks.
+
+**How to fix:** Use static object declarations or fixed-size buffers.
 
 <table>
 <thead>
@@ -5807,7 +6097,9 @@ int *p = &storage; /* Compliant: no dynamic allocation */
 
 Standard header `<setjmp.h>` and functions `setjmp`/`longjmp` shall not be used due to uncontrolled control flow jumps.
 
-**Fix:** Use structured error returns and explicit control flow instead of non-local jumps.
+**Why fix?** `setjmp`/`longjmp` bypass normal control flow and skip destructors/cleanup of local state.
+
+**How to fix:** Use structured error returns and explicit control flow instead of non-local jumps.
 
 <table>
 <thead>
@@ -5852,7 +6144,9 @@ int32_t do_work(void) {
 
 Standard header `<signal.h>` and asynchronous signal handling features shall not be used.
 
-**Fix:** Handle exceptional conditions through polled status flags or dedicated RTOS/event mechanisms.
+**Why fix?** Signal handlers run asynchronously with severe language restrictions; bugs are intermittent and severe.
+
+**How to fix:** Handle exceptional conditions through polled status flags or dedicated RTOS/event mechanisms.
 
 <table>
 <thead>
@@ -5894,7 +6188,9 @@ void service_loop(void) {
 
 Standard library I/O functions (`<stdio.h>`) shall not be used in embedded safety-critical software.
 
-**Fix:** Direct diagnostic output to dedicated hardware UART drivers or log buffers.
+**Why fix?** Standard I/O is heavy, often non-reentrant, and inappropriate for many embedded safety contexts.
+
+**How to fix:** Direct diagnostic output to dedicated hardware UART drivers or log buffers.
 
 <table>
 <thead>
@@ -5935,7 +6231,9 @@ void report(int32_t val) {
 
 String conversion functions (`atof`, `atoi`, `atol`, `atoll`) from `<stdlib.h>` shall not be used due to unbounded behavior on invalid inputs.
 
-**Fix:** Use `strtol()` with range verification or a custom bounded parser.
+**Why fix?** `atoi`-family converters have undefined behavior on invalid input and provide no error reporting.
+
+**How to fix:** Use `strtol()` with range verification or a custom bounded parser.
 
 <table>
 <thead>
@@ -5976,7 +6274,9 @@ if ((end == str) || (*end != '\0') || (val > INT_MAX) || (val < INT_MIN)) {
 
 System termination functions (`abort`, `exit`, `getenv`, `system`) from `<stdlib.h>` shall not be used.
 
-**Fix:** Implement system safe-state recovery logic.
+**Why fix?** `abort`/`exit`/`system` terminate or escape the process without controlled safe-state handling.
+
+**How to fix:** Implement system safe-state recovery logic.
 
 <table>
 <thead>
@@ -6014,7 +6314,9 @@ void enter_safe_state(void) {
 
 `bsearch` and `qsort` from `<stdlib.h>` shall not be used due to unverified function pointer callbacks and potential stack overhead.
 
-**Fix:** Implement explicit, statically bounded sorting algorithms (e.g., insertion sort).
+**Why fix?** `qsort`/`bsearch` rely on function pointers and can have unbounded stack/time behavior.
+
+**How to fix:** Implement explicit, statically bounded sorting algorithms (e.g., insertion sort).
 
 <table>
 <thead>
@@ -6059,7 +6361,9 @@ void insertion_sort(int32_t *arr, size_t n) {
 
 Standard header `<time.h>` date and time functions shall not be used.
 
-**Fix:** Use a project-specific monotonic tick/counter from the platform timer driver.
+**Why fix?** `time.h` clocks are environment-dependent and unsuitable as safety-critical timing sources.
+
+**How to fix:** Use a project-specific monotonic tick/counter from the platform timer driver.
 
 <table>
 <thead>
@@ -6097,7 +6401,9 @@ uint32_t now = get_system_ticks(); /* Compliant: no time.h */
 
 Standard header `<tgmath.h>` type-generic math library shall not be used.
 
-**Fix:** Include the typed math header and call the explicitly typed function.
+**Why fix?** `tgmath.h` type-generic macros obscure which function is called and complicate analysis.
+
+**How to fix:** Include the typed math header and call the explicitly typed function.
 
 <table>
 <thead>
@@ -6134,7 +6440,9 @@ double y = sqrt(x); /* Compliant: typed math.h function */
 
 Standard header `<fenv.h>` floating-point exception handling should not be used.
 
-**Fix:** Validate floating-point inputs/outputs explicitly instead of relying on floating-environment traps.
+**Why fix?** `fenv.h` floating-environment access is poorly portable and interacts badly with optimizations.
+
+**How to fix:** Validate floating-point inputs/outputs explicitly instead of relying on floating-environment traps.
 
 <table>
 <thead>
@@ -6179,7 +6487,9 @@ float safe_div(float a, float b) {
 
 All resources allocated dynamically (such as file handles or hardware locks) must be explicitly released on all path exits.
 
-**Fix:** Ensure resource handles are explicitly released prior to every return path.
+**Why fix?** Failing to release resources on every path causes leaks, handle exhaustion, and lockouts.
+
+**How to fix:** Ensure resource handles are explicitly released prior to every return path.
 
 <table>
 <thead>
@@ -6228,7 +6538,9 @@ void read_config(const char *path) {
 
 A resource shall not be released more than once (e.g., double-free or double-closing a handle).
 
-**Fix:** Set the resource handle to `NULL` after release and check before closing.
+**Why fix?** Double-free/double-close is undefined behavior and can corrupt allocator or stream state.
+
+**How to fix:** Set the resource handle to `NULL` after release and check before closing.
 
 <table>
 <thead>
@@ -6267,7 +6579,9 @@ if (fp != NULL) {
 
 The same file shall not be opened simultaneously for read and write on different streams.
 
-**Fix:** Open a single stream with the required access mode, or use separate files.
+**Why fix?** Opening the same file on multiple streams invites data races and inconsistent file views.
+
+**How to fix:** Open a single stream with the required access mode, or use separate files.
 
 <table>
 <thead>
@@ -6307,7 +6621,9 @@ if (fp != NULL) {
 
 A read-only stream shall not be written to, and a write-only stream shall not be read from.
 
-**Fix:** Open the stream with a mode that matches the intended operations.
+**Why fix?** Reading a write-only stream or writing a read-only stream fails or has undefined effects.
+
+**How to fix:** Open the stream with a mode that matches the intended operations.
 
 <table>
 <thead>
@@ -6347,7 +6663,9 @@ if (fp != NULL) {
 
 Pointers to `FILE` objects shall not be dereferenced directly.
 
-**Fix:** Interact with streams only through the standard library API.
+**Why fix?** Dereferencing `FILE *` depends on opaque library internals and is non-portable/undefined.
+
+**How to fix:** Interact with streams only through the standard library API.
 
 <table>
 <thead>
@@ -6388,7 +6706,9 @@ if (fp != NULL) {
 
 The value of a pointer to a closed `FILE` stream shall not be used.
 
-**Fix:** Null out the pointer after closing and never use a closed stream.
+**Why fix?** Using a `FILE *` after `fclose` is undefined behavior (use-after-free of the stream).
+
+**How to fix:** Null out the pointer after closing and never use a closed stream.
 
 <table>
 <thead>
