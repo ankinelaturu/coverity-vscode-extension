@@ -103,6 +103,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
     );
   }
 
+  pushLens(lenses, range, '| |');
   pushLens(lenses, range, 'Full Trace', 'coverity.showTracePeek', [finding.id, eventIndex]);
 }
 
