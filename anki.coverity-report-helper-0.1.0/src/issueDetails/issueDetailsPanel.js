@@ -4,14 +4,55 @@ const vscode = require('vscode');
 const { buildIssueDetailsHtml, emptyIssueDetailsHtml } = require('./buildIssueDetailsHtml');
 const { lookupMisraRule, loadMisraRules } = require('../misra/misraRules');
 const { describe } = require('../lookup/lookup');
+const { listFindingsOnLine } = require('../codelens/findingsAtLine');
+const { matchDiagnosticFinding } = require('../navigation/editorNavigation');
 
 const ISSUE_DETAILS_VIEW_ID = 'coverity.issueDetails';
+const LINE_FOLLOW_DEBOUNCE_MS = 80;
 
 /** @type {IssueDetailsViewProvider | null} */
 let viewProvider = null;
 
 function issueDetailsFollowActive() {
   return vscode.workspace.getConfiguration('coverity').get('issueDetailsFollowActive', true);
+}
+
+function isCpp(doc) {
+  return doc && (doc.languageId === 'c' || doc.languageId === 'cpp');
+}
+
+/**
+ * Pick the finding that should drive Issue Details for the caret line.
+ * @param {object} session
+ * @param {import('vscode').TextDocument} document
+ * @param {import('vscode').Position} position
+ * @returns {string | null}
+ */
+function resolveFindingIdForLine(session, document, position) {
+  if (!session.hasReport() || !document) {
+    return null;
+  }
+  const line = position.line;
+  const choices = listFindingsOnLine(session, document.uri, line);
+  if (choices.length === 0) {
+    return null;
+  }
+
+  const diagHit = matchDiagnosticFinding(session, document, line);
+  if (diagHit) {
+    return diagHit.findingId;
+  }
+
+  if (session.activeFindingId && choices.some((c) => c.finding.id === session.activeFindingId)) {
+    return session.activeFindingId;
+  }
+
+  const remembered = session.getLineFindingMemory?.(document.uri, line);
+  if (remembered && choices.some((c) => c.finding.id === remembered)) {
+    return remembered;
+  }
+
+  return choices[0].finding.id;
 }
 
 class IssueDetailsViewProvider {
@@ -29,6 +70,8 @@ class IssueDetailsViewProvider {
     /** @type {string | null} */
     this.renderedFindingId = null;
     this._followInFlight = false;
+    /** @type {ReturnType<typeof setTimeout> | null} */
+    this._lineTimer = null;
   }
 
   resetToEmpty(message) {
@@ -54,7 +97,6 @@ class IssueDetailsViewProvider {
       this.view = undefined;
     });
 
-    // Warm MISRA index once the view appears.
     loadMisraRules(this.context);
 
     if (this.pendingHtml) {
@@ -65,6 +107,9 @@ class IssueDetailsViewProvider {
     } else {
       webviewView.webview.html = emptyIssueDetailsHtml();
     }
+
+    // Catch up to current caret when the view appears.
+    this.scheduleFollowEditorLine();
   }
 
   /**
@@ -93,14 +138,53 @@ class IssueDetailsViewProvider {
       this.resetToEmpty('Load a Coverity report to see issue details.');
       return;
     }
-    const findingId = this.session.activeFindingId;
+    // Prefer caret-line finding; fall back to active finding from navigation/Problems.
+    this.scheduleFollowEditorLine();
+  }
+
+  scheduleFollowEditorLine() {
+    if (!issueDetailsFollowActive()) {
+      return;
+    }
+    if (this._lineTimer) {
+      clearTimeout(this._lineTimer);
+    }
+    this._lineTimer = setTimeout(() => {
+      this._lineTimer = null;
+      void this.followEditorLine();
+    }, LINE_FOLLOW_DEBOUNCE_MS);
+  }
+
+  async followEditorLine() {
+    if (!issueDetailsFollowActive()) {
+      return;
+    }
+    if (!this.session.hasReport()) {
+      this.resetToEmpty('Load a Coverity report to see issue details.');
+      return;
+    }
+
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !isCpp(editor.document)) {
+      this.resetToEmpty('Open a C/C++ file and place the caret on a Coverity finding line.');
+      return;
+    }
+
+    const findingId = resolveFindingIdForLine(
+      this.session,
+      editor.document,
+      editor.selection.active
+    );
     if (!findingId) {
+      this.resetToEmpty(
+        'No Coverity issue or event on this line. Move the caret to a finding line (or select an issue in Problems).'
+      );
       return;
     }
     if (findingId === this.renderedFindingId) {
       return;
     }
-    void this.renderFinding(findingId, { focus: false });
+    await this.renderFinding(findingId, { focus: false });
   }
 
   /**
@@ -145,6 +229,21 @@ function registerIssueDetailsView(context, session) {
   viewProvider = new IssueDetailsViewProvider(context, session);
   context.subscriptions.push(
     session.onDidChange(() => viewProvider.handleSessionChange()),
+    vscode.window.onDidChangeActiveTextEditor(() => viewProvider.scheduleFollowEditorLine()),
+    vscode.window.onDidChangeTextEditorSelection((e) => {
+      if (!isCpp(e.textEditor.document)) {
+        return;
+      }
+      viewProvider.scheduleFollowEditorLine();
+    }),
+    {
+      dispose() {
+        if (viewProvider?._lineTimer) {
+          clearTimeout(viewProvider._lineTimer);
+          viewProvider._lineTimer = null;
+        }
+      },
+    },
     vscode.window.registerWebviewViewProvider(ISSUE_DETAILS_VIEW_ID, viewProvider, {
       webviewOptions: { retainContextWhenHidden: true },
     })
@@ -166,7 +265,14 @@ async function showIssueDetails(session, findingId) {
     return;
   }
 
-  const fid = findingId || session.activeFindingId;
+  let fid = findingId || null;
+  if (!fid) {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && isCpp(editor.document)) {
+      fid = resolveFindingIdForLine(session, editor.document, editor.selection.active);
+    }
+  }
+  fid = fid || session.activeFindingId;
   if (!fid) {
     vscode.window.showWarningMessage('Coverity: no issue selected for Issue Details.');
     viewProvider.resetToEmpty();
@@ -191,4 +297,5 @@ module.exports = {
   ISSUE_DETAILS_VIEW_ID,
   registerIssueDetailsView,
   showIssueDetails,
+  resolveFindingIdForLine,
 };

@@ -249,7 +249,7 @@
         "coverity.issueDetailsFollowActive": {
           "type": "boolean",
           "default": true,
-          "description": "Refresh the Issue Details panel when the active Coverity finding changes (Problems navigation, CodeLens, hover)."
+          "description": "Refresh Issue Details when the editor caret moves onto a Coverity finding line, or when the active finding changes (Problems, CodeLens, hover)."
         },
         "coverity.codeLensEnabled": {
           "type": "boolean",
