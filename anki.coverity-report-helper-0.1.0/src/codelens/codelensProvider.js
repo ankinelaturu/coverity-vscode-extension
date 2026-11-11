@@ -57,7 +57,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
   const ruleTitle = `| | | ${truncateLabel(findingDisplayName(finding))} | | |`;
 
   if (k === 1) {
-    pushLens(lenses, range, `←${DOT_OFF} issue 1/1 ${DOT_OFF}→`);
+    pushLens(lenses, range, `←${DOT_OFF} 🦆 issue 1/1 ${DOT_OFF}→`);
   } else {
     pushLens(
       lenses,
@@ -66,7 +66,7 @@ function appendLineCodeLenses(session, document, line, lenses, range) {
       ruleCanPrev ? 'coverity.cycleFindingAtLine' : undefined,
       ruleCanPrev ? [uriStr, line, -1] : undefined
     );
-    pushLens(lenses, range, `issue ${ruleNum}/${k}`, 'coverity.pickFindingAtLine', [uriStr, line]);
+    pushLens(lenses, range, `🦆 issue ${ruleNum}/${k}`, 'coverity.pickFindingAtLine', [uriStr, line]);
     pushLens(
       lenses,
       range,
