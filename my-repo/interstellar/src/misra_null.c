@@ -2,6 +2,6 @@
 #include <stddef.h>
 
 int *misra_null_ptr(void) {
-  int *p = (int *)0;
+  int *p = 0;
   return p;
 }

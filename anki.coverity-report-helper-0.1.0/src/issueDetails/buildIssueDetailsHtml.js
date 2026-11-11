@@ -392,10 +392,6 @@ function renderPossibleFixSection(fix) {
               <span class="conf conf-${escapeHtml(conf)}" title="Offline heuristic confidence">${escapeHtml(conf)}</span>
               ${refOnly ? '<span class="conf conf-ref">pattern</span>' : ''}
             </span>
-            <span class="diff-box-legend">
-              <span class="leg del">${escapeHtml(leftTitle)}</span>
-              <span class="leg add">${escapeHtml(rightTitle)}</span>
-            </span>
           </div>
           <div class="fix-meta">
             <p class="fix-title"><strong>${escapeHtml(fix.title)}</strong></p>
@@ -501,10 +497,6 @@ function buildIssueDetailsHtml(opts) {
         <div class="diff-box">
           <div class="diff-box-header">
             <span class="diff-box-label">Reference example</span>
-            <span class="diff-box-legend">
-              <span class="leg del">Example</span>
-              <span class="leg add">Fixed</span>
-            </span>
           </div>
           <div class="diff">
             ${renderPane(left, 'left')}
@@ -633,25 +625,6 @@ function buildIssueDetailsHtml(opts) {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     opacity: 0.9;
-  }
-  .diff-box-legend {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .leg {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
-  }
-  .leg.del {
-    color: #ffb4b4;
-    background: rgba(255, 80, 80, 0.18);
-  }
-  .leg.add {
-    color: #b6f0b6;
-    background: rgba(80, 200, 80, 0.18);
   }
   .conf {
     display: inline-block;
