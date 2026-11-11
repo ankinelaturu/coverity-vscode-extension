@@ -149,21 +149,22 @@ function buildIssueDetailsHtml(opts) {
     margin: 0;
     padding: 0;
     height: 100%;
+    overflow: hidden;
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size);
     color: var(--vscode-foreground);
     background: var(--vscode-sideBar-background, var(--vscode-editor-background));
   }
   .wrap {
-    display: flex;
-    flex-direction: column;
+    box-sizing: border-box;
     height: 100%;
-    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .meta {
     padding: 12px 14px 10px;
     border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.35));
-    flex: 0 0 auto;
   }
   .badge {
     display: inline-block;
@@ -192,23 +193,21 @@ function buildIssueDetailsHtml(opts) {
   }
   .why, .how { opacity: 0.95; }
   .diff {
-    flex: 1 1 auto;
-    min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
-    overflow: hidden;
+    align-items: start;
+    min-height: 160px;
   }
   .pane {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
     border-right: 1px solid var(--vscode-panel-border, rgba(128,128,128,.35));
-    overflow: hidden;
   }
   .pane.fixed { border-right: none; }
   .pane-title {
-    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     padding: 6px 10px;
     font-size: 11px;
     font-weight: 600;
@@ -224,12 +223,11 @@ function buildIssueDetailsHtml(opts) {
     color: #8aff8a;
   }
   .pane-body {
-    flex: 1 1 auto;
-    overflow: auto;
     font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
     font-size: var(--vscode-editor-font-size, 12px);
     line-height: 1.45;
     background: var(--vscode-editor-background);
+    overflow-x: auto;
   }
   .diff-line {
     display: grid;
