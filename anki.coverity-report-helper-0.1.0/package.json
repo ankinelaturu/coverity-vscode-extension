@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -166,6 +166,13 @@
         "enablement": "coverity.hasReport"
       },
       {
+        "command": "coverity.applyPossibleFix",
+        "title": "Apply Possible Fix",
+        "icon": "$(lightbulb)",
+        "category": "Coverity",
+        "enablement": "coverity.hasReport"
+      },
+      {
         "command": "coverity.pickProblemsTypeFilter",
         "title": "Filter Coverity by Checker",
         "icon": {
@@ -208,6 +215,7 @@
         { "command": "coverity.nextTraceStep", "when": "coverity.hasReport" },
         { "command": "coverity.showTracePeek", "when": "coverity.hasReport" },
         { "command": "coverity.showIssueDetails", "when": "coverity.hasReport" },
+        { "command": "coverity.applyPossibleFix", "when": "coverity.hasReport" },
         { "command": "coverity.pickProblemsTypeFilter", "when": "coverity.hasReport" }
       ]
     },

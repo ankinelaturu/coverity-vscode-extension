@@ -350,8 +350,9 @@ function diffLines(leftText, rightText) {
 /**
  * @param {{ num: number | null, text: string, kind: string, html?: string }[]} lines
  * @param {'left' | 'right'} side
+ * @param {{ leftTitle?: string, rightTitle?: string }} [titles]
  */
-function renderPane(lines, side) {
+function renderPane(lines, side, titles = {}) {
   const rows = lines
     .map((ln) => {
       const num = ln.num == null ? '' : String(ln.num);
@@ -359,9 +360,47 @@ function renderPane(lines, side) {
       return `<div class="diff-line ${ln.kind}"><span class="ln">${escapeHtml(num)}</span><span class="code">${code}</span></div>`;
     })
     .join('');
-  const title = side === 'left' ? 'Example' : 'Fixed';
+  const title =
+    side === 'left' ? titles.leftTitle || 'Example' : titles.rightTitle || 'Fixed';
   const cls = side === 'left' ? 'pane example' : 'pane fixed';
-  return `<div class="${cls}"><div class="pane-title">${title}</div><div class="pane-body">${rows}</div></div>`;
+  return `<div class="${cls}"><div class="pane-title">${escapeHtml(title)}</div><div class="pane-body">${rows}</div></div>`;
+}
+
+/**
+ * @param {import('../misra/possibleFix').PossibleFixSuggestion} fix
+ */
+function renderPossibleFixSection(fix) {
+  if (!fix) {
+    return '';
+  }
+  const { left, right } = diffLines(fix.originalText, fix.proposedText);
+  const conf = String(fix.confidence || 'low').toLowerCase();
+  const applyHint = fix.applyable
+    ? 'Apply via Quick Fix (lightbulb) or command <code>Coverity: Apply Possible Fix</code>.'
+    : 'Review only — not auto-applied.';
+  return `
+      <div class="diff-section possible-fix">
+        <div class="diff-box">
+          <div class="diff-box-header">
+            <span class="diff-box-label">Possible fix
+              <span class="conf conf-${escapeHtml(conf)}" title="Offline heuristic confidence">${escapeHtml(conf)}</span>
+            </span>
+            <span class="diff-box-legend">
+              <span class="leg del">Current</span>
+              <span class="leg add">Proposed</span>
+            </span>
+          </div>
+          <div class="fix-meta">
+            <p class="fix-title"><strong>${escapeHtml(fix.title)}</strong></p>
+            <p class="fix-rationale">${escapeHtml(fix.rationale)}</p>
+            <p class="fix-apply muted">${applyHint}</p>
+          </div>
+          <div class="diff">
+            ${renderPane(left, 'left', { leftTitle: 'Current', rightTitle: 'Proposed' })}
+            ${renderPane(right, 'right', { leftTitle: 'Current', rightTitle: 'Proposed' })}
+          </div>
+        </div>
+      </div>`;
 }
 
 /**
@@ -418,6 +457,7 @@ function renderIssueHeading(typeTitle, checkerId, rule) {
  * @param {string} opts.typeTitle
  * @param {string} [opts.findingSummary]
  * @param {import('../misra/misraRules').MisraRuleEntry | null} opts.rule
+ * @param {import('../misra/possibleFix').PossibleFixSuggestion | null} [opts.possibleFix]
  */
 function buildIssueDetailsHtml(opts) {
   const nonce = crypto.randomBytes(16).toString('base64');
@@ -425,6 +465,7 @@ function buildIssueDetailsHtml(opts) {
   const title = opts.typeTitle || checker;
   const rule = opts.rule;
   const headingHtml = renderIssueHeading(title, checker, rule);
+  const possibleFixHtml = opts.possibleFix ? renderPossibleFixSection(opts.possibleFix) : '';
 
   let body;
   if (!rule) {
@@ -433,7 +474,8 @@ function buildIssueDetailsHtml(opts) {
         ${headingHtml}
         ${opts.findingSummary ? `<p class="summary">${escapeHtml(opts.findingSummary)}</p>` : ''}
         <p class="muted">No MISRA C:2012 entry matched this checker. Details panel focuses on MISRA Rule/Dir references.</p>
-      </div>`;
+      </div>
+      ${possibleFixHtml}`;
   } else {
     const { left, right } = diffLines(rule.example, rule.fixed);
     body = `
@@ -443,10 +485,11 @@ function buildIssueDetailsHtml(opts) {
         ${rule.whyFix ? `<p class="why"><strong>Why fix?</strong> ${escapeHtml(rule.whyFix)}</p>` : ''}
         ${rule.howToFix ? `<p class="how"><strong>How to fix:</strong> ${escapeHtml(rule.howToFix)}</p>` : ''}
       </div>
+      ${possibleFixHtml}
       <div class="diff-section">
         <div class="diff-box">
           <div class="diff-box-header">
-            <span class="diff-box-label">Code comparison</span>
+            <span class="diff-box-label">Reference example</span>
             <span class="diff-box-legend">
               <span class="leg del">Example</span>
               <span class="leg add">Fixed</span>
@@ -599,6 +642,45 @@ function buildIssueDetailsHtml(opts) {
     color: #b6f0b6;
     background: rgba(80, 200, 80, 0.18);
   }
+  .conf {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+  .conf-high {
+    color: #b6f0b6;
+    background: rgba(80, 200, 80, 0.22);
+  }
+  .conf-medium {
+    color: #f0c56a;
+    background: rgba(230, 160, 40, 0.22);
+  }
+  .conf-low {
+    color: #c8c8c8;
+    background: rgba(127, 127, 127, 0.22);
+  }
+  .fix-meta {
+    padding: 8px 12px 4px;
+    border-bottom: 1px solid var(--vscode-widget-border, rgba(128,128,128,.25));
+  }
+  .fix-title, .fix-rationale, .fix-apply {
+    margin: 0 0 6px;
+    line-height: 1.4;
+    font-size: 12px;
+  }
+  .fix-apply code {
+    font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+    font-size: 11px;
+  }
+  .possible-fix {
+    padding-top: 0;
+  }
   .diff {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -713,4 +795,5 @@ module.exports = {
   escapeHtml,
   splitCheckerPill,
   renderIssueHeading,
+  renderPossibleFixSection,
 };

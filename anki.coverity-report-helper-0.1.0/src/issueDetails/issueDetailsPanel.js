@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { buildIssueDetailsHtml, emptyIssueDetailsHtml } = require('./buildIssueDetailsHtml');
 const { lookupMisraRule, loadMisraRules } = require('../misra/misraRules');
+const { computePossibleFixForFinding } = require('../misra/possibleFixActions');
 const { describe } = require('../lookup/lookup');
 const { listFindingsOnLine } = require('../codelens/findingsAtLine');
 const { matchDiagnosticFinding } = require('../navigation/editorNavigation');
@@ -208,11 +209,18 @@ class IssueDetailsViewProvider {
       const mainEv = finding.events[finding.events.length - 1];
       const hint = describe(checkerId, mainEv?.label);
       const findingSummary = [hint, mainEv?.rawPayload].filter(Boolean).join(' — ');
+      let possibleFix = null;
+      try {
+        possibleFix = await computePossibleFixForFinding(this.session, findingId);
+      } catch (err) {
+        console.warn('Coverity: possible fix failed', err);
+      }
       const html = buildIssueDetailsHtml({
         checkerId,
         typeTitle,
         findingSummary,
         rule,
+        possibleFix,
       });
       await this.setHtml(html, findingId, opts);
     } finally {

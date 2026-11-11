@@ -20,6 +20,7 @@ const {
   registerIssueDetailsView,
   showIssueDetails,
 } = require('./src/issueDetails/issueDetailsPanel');
+const { registerPossibleFixSupport } = require('./src/misra/possibleFixActions');
 const { listFindingsOnLine, findingDisplayName } = require('./src/codelens/findingsAtLine');
 const { formatStepLabel } = require('./src/model/stepDisplay');
 const { syncEditorNavigationContext } = require('./src/navigation/editorNavigation');
@@ -93,6 +94,9 @@ function activate(context) {
     registerIssueDetailsView(context, session),
     registerTracePeekCodeActions(context, session),
     registerReportStatusBar(session),
+  );
+  registerPossibleFixSupport(context, session);
+  context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => session.handleDocumentChange(e)),
     vscode.workspace.onDidSaveTextDocument((doc) => session.handleDocumentSave(doc.uri)),
     vscode.workspace.onDidRenameFiles((e) => session.handleFilesRenamed(e.files)),
