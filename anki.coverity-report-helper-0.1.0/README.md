@@ -42,26 +42,28 @@ Then **Developer: Reload Window** in Cursor or VS Code.
 
 After loading a report:
 
-- **Explorer** — badges and colors on **files and folders** (rollup), severity tint, multi-line tooltips listing findings
+- **Explorer** — badges and colors on **files and folders** (rollup), severity tint, multi-line tooltips listing issues
 - **Badge style** (`coverity.explorerBadgeStyle`): `duck` (default: `🦆1`–`🦆9`, or `🦆+` for 10+), `count` (numeric only), or legacy `brand` (same as `duck`)
 - **Extension icon** — `media/duck.svg` (Extensions list only; **not** in the file tree)
-- **Problems** — filter by source `Coverity Report`; **filter icon** on the Problems title bar (or **Coverity: Filter Coverity by Finding Type**) picks a checker such as `FORWARD_NULL` and hides other Coverity markers until you choose **All finding types** (compiler/LSP problems are unchanged)
-- **Editor** — squiggles, hover with SVG trace timeline + clickable steps, optional CodeLens (rule `rule i/k` + step `step n/N` quick picks, ●/○ step/rule arrows), Alt+Shift+Up/Down for trace steps
-- **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, step markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
+- **Problems** — filter by source `Coverity Report`; **filter icon** on the Problems title bar (or **Coverity: Filter Coverity by Checker**) picks a checker such as `FORWARD_NULL` and hides other Coverity markers until you choose **All checkers** (compiler/LSP problems are unchanged)
+- **Editor** — squiggles, hover with SVG trace timeline + clickable events, optional CodeLens (`issue i/k` + `event n/N` quick picks, ●/○ issue/event arrows), Alt+Shift+Up/Down for events in the active issue
+- **COV trace strip** (optional) — `coverity.traceBadgesEnabled` defaults to **off**. When **on**, event markers render in the line-decorations column between line numbers and code; set `editor.lineDecorationsWidth` (e.g. **72px**) if needed. Connectors: `coverity.traceStripConnectors` (default **off**). Lanes: `coverity.experimentalTraceLanes` (default **on**). Hover timeline and CodeLens still work with the strip off.
 
-**Nested trace steps** — Reports may use dotted step numbers (`1.`, `1.1.`, `2.1.`). See fixture **CID 90100** / `nested_demo.c`; Full Trace indents sub-steps and shows labels like **Step 1.1**.
+**Nested events** — Reports may use dotted event numbers (`1.`, `1.1.`, `2.1.`). See fixture **CID 90100** / `nested_demo.c`; Full Trace indents sub-events and shows labels like **Event 1.1**.
 
-**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each step shows ±2 lines of context; click a step header to open that location in the **main editor**. Trace stays in the sidebar. After you open it once, the panel **follows** the active finding and step (CodeLens rule/step controls, prev/next, hover) unless you turn off `coverity.fullTraceFollowActive`.
+**Full Trace** — Native Problems peek stays a one-line diagnostic. On a Coverity squiggle, use the **Full Trace** link in the diagnostic hover (preferred Quick Fix), the light bulb, **Full Trace** in the editor right-click menu, or Command Palette → **Coverity: Full Trace**. Opens in the **Coverity → Full Trace** sidebar view (move it to the **right auxiliary bar** in Cursor/VS Code if you prefer). Each event shows ±2 lines of context; click an event header to open that location in the **main editor**. Trace stays in the sidebar. After you open it once, the panel **follows** the active issue and event (CodeLens issue/event controls, prev/next, hover) unless you turn off `coverity.fullTraceFollowActive`.
 
-**Problems:** one **Warning** per finding on the **last trace step**; all steps (including the main line) are listed in **related information** on that diagnostic. Source is `Coverity Report`. Optional trace-step wavy underline: `coverity.traceStepMarkEnabled` (not on the main step line).
+**Problems:** one **Warning** per **issue** on the **last event**; all events (including the main line) are listed in **related information** on that diagnostic. Source is `Coverity Report`. Optional event wavy underline: `coverity.traceStepMarkEnabled` (not on the last event line).
 
-**Explorer badge vs Coverity duck logo:** VS Code’s `FileDecorationProvider` only allows a **short text badge** (1–2 characters) and **theme colors**, not custom images. You cannot put the official Coverity duck PNG in the tree. Default badge is **🦆1**–**🦆9** (unique findings on that file/folder) or **🦆+** when count ≥ 10 (exact count in tooltip). Use `"count"` for numeric-only badges.
+**Explorer badge vs Coverity duck logo:** VS Code’s `FileDecorationProvider` only allows a **short text badge** (1–2 characters) and **theme colors**, not custom images. You cannot put the official Coverity duck PNG in the tree. Default badge is **🦆1**–**🦆9** (unique issues on that file/folder) or **🦆+** when count ≥ 10 (exact count in tooltip). Use `"count"` for numeric-only badges.
+
+**Terminology:** Coverity **issue** (CID + path) and **event** (path line / tag). Setting and command IDs may still say `finding` or `traceStep` for compatibility.
 
 Commands: **Command Palette** → `Coverity:` …
 
 ### Coverity activity bar
 
-The duck icon opens **Full Trace** only (no findings tree). Drag the view to the **secondary side bar** on the right if you want trace beside the editor without splitting editor tabs.
+The duck icon opens **Full Trace** only (no issue tree). Drag the view to the **secondary side bar** on the right if you want trace beside the editor without splitting editor tabs.
 
 ## Parser dev helper
 
@@ -79,10 +81,10 @@ Bundled `src/lookup/descriptions.json` adds short **checker** and **event tag** 
 
 - Report paths may be **absolute** (Windows drive letters supported) or **relative to the workspace folder root** (not the report file’s directory).
 - **Multi-root:** each folder root is tried; use **Coverity: Configure Path Mapping** for `reportPrefix` → `workspaceFolder` when build paths differ from the repo layout.
-- Unresolved steps stay visible in Problems/hover with a mapping hint; the extension never runs or executes path strings from the report.
+- Unresolved events stay visible in Problems/hover with a mapping hint; the extension never runs or executes path strings from the report.
 
 ## Sample workspace
 
-Use the sibling **`my-repo/`** at the repository root (open as its own window). Default report: `deploy/coverity/coverity-report.txt`. **Multiple findings on one line:** `interstellar/lib/log_format.c` (90002+90008), `interstellar/src/multi_finding_line.c` (90200–90202).
+Use the sibling **`my-repo/`** at the repository root (open as its own window). Default report: `deploy/coverity/coverity-report.txt`. **Multiple issues on one line:** `interstellar/lib/log_format.c` (90002+90008), `interstellar/src/multi_finding_line.c` (90200–90202).
 
 Project design docs: `../docs/README.md`

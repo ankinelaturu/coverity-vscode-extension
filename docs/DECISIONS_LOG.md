@@ -28,6 +28,20 @@ Record non-obvious choices here so later edits (human or agent) stay consistent.
 | DEC-017 | Problems: one diagnostic per finding; trace in relatedInformation | Accepted | 2026-11-06 |
 | DEC-018 | Trace step marks (decorations) | Accepted | 2026-11-06 |
 | DEC-019 | CodeLens rule/step navigation + per-line finding memory | Accepted | 2026-11-06 |
+| DEC-020 | User-facing Issue/Event terminology (Coverity) | Accepted | 2026-11-10 |
+
+---
+
+## DEC-020 — Coverity Issue / Event terminology
+
+**Status:** Accepted  
+**Date:** 2026-11-10
+
+**Context:** Coverity documentation uses **Issue** and **Event**; the extension used finding/step/rule in UI copy.
+
+**Decision:** User-facing strings and docs use **issue** and **event**. Command IDs, setting keys, and parser fields (`findings[]`, `findingId`, `eventIndex`) stay stable. CodeLens carousel labels use `issue i/k` and `event n/N`. Event **tag** remains the report label (e.g. `var_deref_op`), not the word “Event” alone.
+
+**Consequences:** DEC-019 history still describes “rule/step” implementation; behavior unchanged.
 
 ---
 

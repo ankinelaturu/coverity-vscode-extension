@@ -6,6 +6,8 @@
 **Implementation home:** `anki.coverity-report-helper-0.1.0/src/parser/textReportParser.js`  
 **Related:** [DESIGN.md](./DESIGN.md) §6, [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md)
 
+**Terminology:** One parsed occurrence block = Coverity **issue** (stored as `findings[]` in code). Each `N. tag: message` line = **event** (`events[]`).
+
 ---
 
 ## 1. Canonical sample block (from Interstellar fixture)

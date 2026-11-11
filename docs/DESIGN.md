@@ -6,7 +6,7 @@
 
 ## 1. Problem statement
 
-Developers work on embedded C/C++ in VS Code (folder workspace) while Coverity analysis runs elsewhere (e.g. Keil µVision, WSL/Docker). They need to **load an existing text report** and **navigate findings in source**—markers, sidebar, hover, optional CodeLens—without building, debugging, or connecting to Coverity services.
+Developers work on embedded C/C++ in VS Code (folder workspace) while Coverity analysis runs elsewhere (e.g. Keil µVision, WSL/Docker). They need to **load an existing text report** and **navigate issues and events in source**—markers, sidebar, hover, optional CodeLens—without building, debugging, or connecting to Coverity services.
 
 The extension **does not** analyze C/C++, prove fixes, or upload source. It **parses report text** and **tracks locations** as the user edits.
 
@@ -15,7 +15,7 @@ The extension **does not** analyze C/C++, prove fixes, or upload source. It **pa
 ### Goals
 
 - Parse and display Coverity-style **text reports** with clear parse status and warnings.
-- **One canonical finding** per issue; index by file for navigation; full trace always available.
+- **One canonical issue** per Coverity report occurrence; index by file for navigation; full trace always available.
 - **Editor integration:** diagnostics (with display policy), decorations, hover, overview ruler, navigation commands.
 - **Edit-aware positions** with conservative uncertainty; persist adjusted ranges when fingerprints match.
 - **Path resolution** with explicit mappings; never silent wrong-file navigation.
@@ -25,23 +25,27 @@ The extension **does not** analyze C/C++, prove fixes, or upload source. It **pa
 ### Non-goals
 
 - Keil project conversion, compiler/LSP setup, Coverity license or server integration for viewing.
-- Semantic proof that a finding is fixed or that snippet match is the exact AST node.
+- Semantic proof that an issue is fixed or that snippet match is the exact AST node.
 - Arbitrary HTML inside native Peek Problem; gutter “Git graph” lanes unless public APIs support them.
 - Executing anything from report contents; network lookups at runtime.
 
 ## 3. Terminology (canonical)
 
+Align with Coverity: **Issue** and **Event** in user-facing copy. Code may still use `finding` / `eventIndex` identifiers.
+
 | Term | Definition |
 |------|------------|
-| **Finding** | One reported issue; ordered **trace events** |
-| **Trace event / step** | Location + label + raw payload |
-| **Checker ID** | Issue type (e.g. `FORWARD_NULL`); used for Error type grouping when present |
-| **Event tag** | Step kind (e.g. `var_deref_op`); **not** a finding ID or error type |
-| **Step number** | Trace order (1, 2, 3…); not severity |
+| **Issue** | One Coverity occurrence (CID block, checker, full path); ordered **events** |
+| **Event** | One point on the execution path: location + event tag + payload |
+| **Checker ID** | Issue type (e.g. `FORWARD_NULL`); used for Problems filter and grouping |
+| **Event tag** | Event kind (e.g. `var_deref_op`); **not** the CID and not the checker ID |
+| **Event index / path order** | Trace order (1, 2, 3… or nested `1.1.`); not severity |
 | **Original location** | From report; immutable |
 | **Current range** | After path resolve + snippet match + edit tracking |
 
-**Integrity rules:** Do not treat last/highest step as main defect unless report says so. Do not infer severity from step count or event tag.
+**Code alias:** parsed `findings[]` / `findingId` = one **issue**; `events[]` / `eventIndex` = **events**.
+
+**Integrity rules:** Do not treat the last event as the main defect unless the report says so. Do not infer severity from event count or event tag.
 
 ## 4. High-level architecture
 
