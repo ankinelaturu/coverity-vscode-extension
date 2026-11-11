@@ -83,56 +83,56 @@
       },
       {
         "command": "coverity.navigateToStep",
-        "title": "Navigate to Trace Step",
+        "title": "Navigate to Coverity Event",
         "category": "Coverity"
       },
       {
         "command": "coverity.setActiveFindingStep",
-        "title": "Set Active Coverity Finding Step",
+        "title": "Set Active Coverity Event",
         "category": "Coverity"
       },
       {
         "command": "coverity.traceStepRelative",
-        "title": "Coverity Trace Step Relative",
+        "title": "Coverity Event (Relative)",
         "category": "Coverity"
       },
       {
         "command": "coverity.pickTraceStep",
-        "title": "Pick Coverity Trace Step",
+        "title": "Pick Coverity Event",
         "category": "Coverity"
       },
       {
         "command": "coverity.chooseFindingsAtLine",
-        "title": "Choose Coverity Finding at Line",
+        "title": "Choose Coverity Issue at Line",
         "category": "Coverity"
       },
       {
         "command": "coverity.cycleFindingAtLine",
-        "title": "Cycle Coverity Rule at Line",
+        "title": "Cycle Coverity Issue at Line",
         "category": "Coverity"
       },
       {
         "command": "coverity.pickFindingAtLine",
-        "title": "Pick Coverity Rule at Line",
+        "title": "Pick Coverity Issue at Line",
         "category": "Coverity"
       },
       {
         "command": "coverity.previousTraceStep",
-        "title": "Previous Trace Step",
+        "title": "Previous Coverity Event",
         "icon": "$(arrow-up)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       },
       {
         "command": "coverity.nextTraceStep",
-        "title": "Next Trace Step",
+        "title": "Next Coverity Event",
         "icon": "$(arrow-down)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       },
       {
         "command": "coverity.cycleHoverFinding",
-        "title": "Cycle Coverity Rule at Caret Line (legacy)",
+        "title": "Cycle Coverity Issue at Caret Line (legacy)",
         "category": "Coverity",
         "enablement": "coverity.hasReport"
       },
@@ -145,7 +145,7 @@
       },
       {
         "command": "coverity.pickProblemsTypeFilter",
-        "title": "Filter Coverity by Finding Type",
+        "title": "Filter Coverity by Checker",
         "icon": {
           "light": "media/duck.svg",
           "dark": "media/duck.svg"
@@ -211,12 +211,12 @@
         "coverity.hoverRichTimeline": {
           "type": "boolean",
           "default": true,
-          "description": "Use SVG timeline table in hover; when false, use a plain Markdown step list."
+          "description": "Use SVG timeline table in hover; when false, use a plain Markdown event list."
         },
         "coverity.fullTraceFollowActive": {
           "type": "boolean",
           "default": true,
-          "description": "After Full Trace is opened, refresh the sidebar when you change the active finding or trace step (CodeLens, hover, prev/next)."
+          "description": "After Full Trace is opened, refresh the sidebar when you change the active issue or event (CodeLens, hover, prev/next)."
         },
         "coverity.codeLensEnabled": {
           "type": "boolean",
@@ -225,12 +225,12 @@
         "coverity.traceStepMarkEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Wavy underline on trace steps except the main finding line (last step); that line uses Problems diagnostics only. Underline color follows editorInfo; text color unchanged."
+          "description": "Wavy underline on path events except the last event line (Problems diagnostic); that line uses Problems only. Underline color follows editorInfo; text color unchanged."
         },
         "coverity.traceStepBackgroundEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Deprecated — use coverity.traceStepMarkEnabled. When traceStepMarkEnabled is unset, this toggles the trace step underline."
+          "description": "Deprecated — use coverity.traceStepMarkEnabled. When traceStepMarkEnabled is unset, this toggles the event underline."
         },
         "coverity.traceBadgesEnabled": {
           "type": "boolean",
@@ -240,28 +240,28 @@
         "coverity.explorerDecorationsEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Show Coverity finding badges and colors on files/folders in Explorer."
+          "description": "Show Coverity issue badges and colors on files/folders in Explorer."
         },
         "coverity.explorerBadgeStyle": {
           "type": "string",
           "default": "duck",
           "enum": ["count", "brand", "duck"],
           "enumDescriptions": [
-            "Show finding count (e.g. 3 or 99+)",
+            "Show issue count (e.g. 3 or 99+)",
             "Legacy alias for duck (🦆1–🦆9 / 🦆+)",
-            "Show 🦆1–🦆9 for that many unique findings, 🦆+ for 10 or more (full count in tooltip)"
+            "Show 🦆1–🦆9 for that many unique issues, 🦆+ for 10 or more (full count in tooltip)"
           ],
           "description": "Badge text in Explorer. Duck style uses 🦆 plus digit 1–9, or 🦆+ when count ≥ 10."
         },
         "coverity.explorerHighlightActiveFile": {
           "type": "boolean",
           "default": true,
-          "description": "Use a distinct color on the Explorer entry for the active editor file when it has findings."
+          "description": "Use a distinct color on the Explorer entry for the active editor file when it has issues."
         },
         "coverity.experimentalTraceLanes": {
           "type": "boolean",
           "default": true,
-          "description": "Reserve a fixed-width COV strip between line numbers and code for the whole file; draw multi-lane trace graph and step nodes only on active-finding trace lines."
+          "description": "Reserve a fixed-width COV strip between line numbers and code for the whole file; draw multi-lane trace graph and event nodes only on the active issue's path."
         },
         "coverity.traceGutterLaneCount": {
           "type": "number",
@@ -287,7 +287,7 @@
         "coverity.traceStripConnectors": {
           "type": "boolean",
           "default": false,
-          "description": "When trace badges are on: draw box-drawing connectors between in-file steps in the COV strip. Uses text, not SVG."
+          "description": "When trace badges are on: draw box-drawing connectors between in-file events in the COV strip. Uses text, not SVG."
         },
         "coverity.rerun.enabled": {
           "type": "boolean",
