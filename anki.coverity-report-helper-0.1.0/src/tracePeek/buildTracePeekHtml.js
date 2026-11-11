@@ -111,7 +111,7 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
   const blockHtml = blocks
     .map((b) => {
       const cls = b.isCurrent ? 'block current' : 'block';
-      const badge = b.isCurrent ? ' · current step' : '';
+      const badge = b.isCurrent ? ' · current event' : '';
       const meta = escapeHtml(`${b.label}${b.hint ? ` — ${b.hint}` : ''}${badge}`);
       const loc = escapeHtml(b.locLabel);
       const msgText = b.message || '(no message in report)';
@@ -129,14 +129,14 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
 
       const depthCls = b.stepDepth > 1 ? ` depth-${b.stepDepth}` : '';
       const hdrInner =
-        `<span class="row1"><span class="step">Step ${escapeHtml(b.stepPath)}</span> ` +
+        `<span class="row1"><span class="step">Event ${escapeHtml(b.stepPath)}</span> ` +
         `<span class="trace-pos">(${b.traceIndex} of ${n})</span> ` +
         `<span class="meta">${meta}</span></span>` +
         `<span class="row2 loc">${loc}</span>` +
         `<span class="row3 msg">${msg}</span>`;
 
       const hdr = b.canNavigate
-        ? `<button type="button" class="hdr hdr-link" data-finding-id="${escapeHtml(b.findingId)}" data-event-index="${b.eventIndex}" title="Open this step in the editor">` +
+        ? `<button type="button" class="hdr hdr-link" data-finding-id="${escapeHtml(b.findingId)}" data-event-index="${b.eventIndex}" title="Open this event in the editor">` +
           hdrInner +
           `</button>`
         : `<div class="hdr hdr-static" title="Location unresolved">${hdrInner}</div>`;
@@ -248,7 +248,7 @@ async function buildTracePeekHtml(session, finding, activeEventIndex) {
 </head>
 <body>
   <h1>${escapeHtml(title)}</h1>
-  <div class="subtitle"><code>${escapeHtml(checker)}</code> — full trace (${n} step${n === 1 ? '' : 's'})</div>
+  <div class="subtitle"><code>${escapeHtml(checker)}</code> — full trace (${n} event${n === 1 ? '' : 's'})</div>
   ${blockHtml}
   <script nonce="${nonce}">
     (function () {

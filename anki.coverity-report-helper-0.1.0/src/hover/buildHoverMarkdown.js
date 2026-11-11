@@ -7,7 +7,7 @@ const { linkPillDataUri, sectionPillDataUri, PILL_HEIGHT } = require('./linkPill
 const { fullTraceCommandUri } = require('../tracePeek/tracePeekPanel');
 const { formatStepLabel, stepMarkdownIndent } = require('../model/stepDisplay');
 
-const TRACE_SECTION_LABEL = 'Trace Steps';
+const TRACE_SECTION_LABEL = 'Events';
 
 function escapeMd(s) {
   return String(s || '').replace(/([\\`*_[\]])/g, '\\$1');
@@ -128,7 +128,7 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
   md.supportHtml = useRichTimeline;
 
   md.appendMarkdown(
-    `**[▶ Full Trace](${fullTraceCommandUri(finding.id, eventIndex)})** — all steps with code (±2 lines)\n\n`
+    `**[▶ Full Trace](${fullTraceCommandUri(finding.id, eventIndex)})** — all events with code (±2 lines)\n\n`
   );
 
   const checker = finding.checkerId || 'Unknown';
@@ -137,7 +137,7 @@ function buildCoverityHoverMarkdown(finding, eventIndex, options = {}) {
   md.appendMarkdown(`**${escapeMd(title)}** (\`${escapeMd(checker)}\`)\n\n`);
   const currentStepId = formatStepLabel(ev, eventIndex + 1);
   md.appendMarkdown(
-    `**Trace step ${escapeMd(currentStepId)}** (${eventIndex + 1} of ${stepTotal})\n\n`
+    `**Event ${escapeMd(currentStepId)}** (${eventIndex + 1} of ${stepTotal})\n\n`
   );
 
   const blurb = friendlyBlurb(finding, ev);
