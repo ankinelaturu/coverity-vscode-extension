@@ -68,8 +68,9 @@ function parseMisraMarkdown(markdown) {
     const body = part.slice(hm[0].length);
     const beforeTable = body.split(/<table>/i)[0] || body;
 
-    const whyM = beforeTable.match(/\*\*Why fix\?\*\*\s*([\s\S]*?)(?=\n\s*\*\*How to fix:|\n\s*<table|\Z)/i);
-    const howM = beforeTable.match(/\*\*How to fix:\*\*\s*([\s\S]*?)(?=\n\s*<table|\Z)/i);
+    // Use $ (not \\Z) — JavaScript RegExp has no \\Z end anchor.
+    const whyM = beforeTable.match(/\*\*Why fix\?\*\*\s*([\s\S]*?)(?=\n\s*\*\*How to fix:|\n\s*<table|$)/i);
+    const howM = beforeTable.match(/\*\*How to fix:\*\*\s*([\s\S]*?)(?=\n\s*<table|$)/i);
 
     let description = beforeTable;
     if (whyM) {
@@ -104,16 +105,7 @@ function parseMisraMarkdown(markdown) {
  * @returns {string}
  */
 function resolveReferencePath(context) {
-  const bundled = path.join(context.extensionPath, 'data', 'misra_c_2012_complete_rules_reference.md');
-  if (fs.existsSync(bundled)) {
-    return bundled;
-  }
-  // Dev fallback: workspace sibling next to packaged extension folder
-  const sibling = path.join(context.extensionPath, '..', 'misra_c_2012_complete_rules_reference.md');
-  if (fs.existsSync(sibling)) {
-    return sibling;
-  }
-  return bundled;
+  return path.join(context.extensionPath, 'data', 'misra_c_2012_complete_rules_reference.md');
 }
 
 /**
