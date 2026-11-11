@@ -398,9 +398,20 @@ function buildIssueDetailsHtml(opts) {
         ${rule.whyFix ? `<p class="why"><strong>Why fix?</strong> ${escapeHtml(rule.whyFix)}</p>` : ''}
         ${rule.howToFix ? `<p class="how"><strong>How to fix:</strong> ${escapeHtml(rule.howToFix)}</p>` : ''}
       </div>
-      <div class="diff">
-        ${renderPane(left, 'left')}
-        ${renderPane(right, 'right')}
+      <div class="diff-section">
+        <div class="diff-box">
+          <div class="diff-box-header">
+            <span class="diff-box-label">Code comparison</span>
+            <span class="diff-box-legend">
+              <span class="leg del">Example</span>
+              <span class="leg add">Fixed</span>
+            </span>
+          </div>
+          <div class="diff">
+            ${renderPane(left, 'left')}
+            ${renderPane(right, 'right')}
+          </div>
+        </div>
       </div>`;
   }
 
@@ -433,7 +444,6 @@ function buildIssueDetailsHtml(opts) {
   }
   .meta {
     padding: 12px 14px 10px;
-    border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.35));
   }
   .badge {
     display: inline-block;
@@ -461,42 +471,92 @@ function buildIssueDetailsHtml(opts) {
     line-height: 1.45;
   }
   .why, .how { opacity: 0.95; }
+  .diff-section {
+    padding: 10px 12px 14px;
+  }
+  .diff-box {
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.4)));
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+    box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.08);
+  }
+  .diff-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35)));
+    background: var(--vscode-sideBarSectionHeader-background, rgba(127,127,127,.08));
+  }
+  .diff-box-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+  .diff-box-legend {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .leg {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .leg.del {
+    color: #ffb4b4;
+    background: rgba(255, 80, 80, 0.18);
+  }
+  .leg.add {
+    color: #b6f0b6;
+    background: rgba(80, 200, 80, 0.18);
+  }
   .diff {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
-    align-items: start;
-    min-height: 160px;
+    align-items: stretch;
+    min-height: 120px;
   }
   .pane {
     min-width: 0;
-    border-right: 1px solid var(--vscode-panel-border, rgba(128,128,128,.35));
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.35)));
   }
   .pane.fixed { border-right: none; }
   .pane-title {
     position: sticky;
     top: 0;
     z-index: 1;
-    padding: 6px 10px;
+    padding: 7px 10px;
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+    border-bottom: 1px solid rgba(127,127,127,.2);
   }
   .pane.example .pane-title {
-    background: rgba(255, 80, 80, 0.16);
-    color: #ff8a8a;
+    background: rgba(255, 80, 80, 0.14);
+    color: #ff9a9a;
   }
   .pane.fixed .pane-title {
-    background: rgba(80, 200, 80, 0.16);
-    color: #8aff8a;
+    background: rgba(80, 200, 80, 0.14);
+    color: #9aef9a;
   }
   .pane-body {
+    flex: 1 1 auto;
     font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
     font-size: var(--vscode-editor-font-size, 12px);
-    line-height: 1.45;
+    line-height: 1.5;
     background: var(--vscode-editor-background);
     overflow-x: auto;
+    padding: 4px 0 8px;
   }
   .diff-line {
     display: grid;
@@ -511,12 +571,12 @@ function buildIssueDetailsHtml(opts) {
     border-right: 1px solid var(--vscode-panel-border, rgba(128,128,128,.25));
   }
   .diff-line .code {
-    padding: 0 8px;
+    padding: 0 10px;
   }
   .diff-line.del { background: rgba(255, 80, 80, 0.12); }
   .diff-line.add { background: rgba(80, 200, 80, 0.12); }
   .diff-line.chg { background: rgba(200, 180, 40, 0.10); }
-  .diff-line.pad { background: transparent; min-height: 1.45em; }
+  .diff-line.pad { background: rgba(127,127,127,.04); min-height: 1.5em; }
   .diff-line.same:hover { background: var(--vscode-list-hoverBackground); }
   .ih {
     border-radius: 2px;
@@ -532,7 +592,7 @@ function buildIssueDetailsHtml(opts) {
   }
   @media (max-width: 520px) {
     .diff { grid-template-columns: 1fr; }
-    .pane.example { border-right: none; border-bottom: 1px solid var(--vscode-panel-border, rgba(128,128,128,.35)); }
+    .pane.example { border-right: none; border-bottom: 1px solid var(--vscode-widget-border, rgba(128,128,128,.35)); }
   }
 </style>
 </head>
