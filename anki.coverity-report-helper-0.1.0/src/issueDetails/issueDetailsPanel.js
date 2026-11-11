@@ -3,7 +3,10 @@
 const vscode = require('vscode');
 const { buildIssueDetailsHtml, emptyIssueDetailsHtml } = require('./buildIssueDetailsHtml');
 const { lookupMisraRule, loadMisraRules } = require('../misra/misraRules');
-const { computePossibleFixForFinding } = require('../misra/possibleFixActions');
+const {
+  computePossibleFixForFinding,
+  applyPossibleFix,
+} = require('../misra/possibleFixActions');
 const { suggestPossibleFix } = require('../misra/possibleFix');
 const { describe } = require('../lookup/lookup');
 const { listFindingsOnLine } = require('../codelens/findingsAtLine');
@@ -92,11 +95,14 @@ class IssueDetailsViewProvider {
   resolveWebviewView(webviewView) {
     this.view = webviewView;
     webviewView.webview.options = {
-      enableScripts: false,
+      enableScripts: true,
       localResourceRoots: [],
     };
     webviewView.onDidDispose(() => {
       this.view = undefined;
+    });
+    webviewView.webview.onDidReceiveMessage((msg) => {
+      void this.handleWebviewMessage(msg);
     });
 
     loadMisraRules(this.context);
@@ -112,6 +118,21 @@ class IssueDetailsViewProvider {
 
     // Catch up to current caret when the view appears.
     this.scheduleFollowEditorLine();
+  }
+
+  /**
+   * @param {{ type?: string, findingId?: string }} msg
+   */
+  async handleWebviewMessage(msg) {
+    if (!msg || msg.type !== 'applyPossibleFix' || !msg.findingId) {
+      return;
+    }
+    const ok = await applyPossibleFix(this.session, msg.findingId);
+    // Always re-render so the Apply button re-enables / proposal updates.
+    await this.renderFinding(msg.findingId, { focus: false, force: true });
+    if (ok) {
+      // Applied successfully — panel already refreshed above.
+    }
   }
 
   /**
@@ -191,10 +212,10 @@ class IssueDetailsViewProvider {
 
   /**
    * @param {string} findingId
-   * @param {{ focus?: boolean }} [opts]
+   * @param {{ focus?: boolean, force?: boolean }} [opts]
    */
   async renderFinding(findingId, opts = {}) {
-    if (this._followInFlight) {
+    if (this._followInFlight && !opts.force) {
       return;
     }
     this._followInFlight = true;
@@ -231,6 +252,7 @@ class IssueDetailsViewProvider {
         checkerId,
         typeTitle,
         findingSummary,
+        findingId,
         rule,
         possibleFix,
       });
@@ -239,6 +261,17 @@ class IssueDetailsViewProvider {
       this._followInFlight = false;
     }
   }
+}
+
+/**
+ * Force-refresh Issue Details for a finding (e.g. after Apply from command/CodeAction).
+ * @param {string} findingId
+ */
+async function refreshIssueDetails(findingId) {
+  if (!viewProvider || !findingId) {
+    return;
+  }
+  await viewProvider.renderFinding(findingId, { focus: false, force: true });
 }
 
 /**
@@ -304,7 +337,7 @@ async function showIssueDetails(session, findingId) {
     return;
   }
 
-  await viewProvider.renderFinding(fid, { focus: true });
+  await viewProvider.renderFinding(fid, { focus: true, force: true });
   try {
     await vscode.commands.executeCommand(`${ISSUE_DETAILS_VIEW_ID}.focus`);
   } catch {
@@ -317,5 +350,6 @@ module.exports = {
   ISSUE_DETAILS_VIEW_ID,
   registerIssueDetailsView,
   showIssueDetails,
+  refreshIssueDetails,
   resolveFindingIdForLine,
 };

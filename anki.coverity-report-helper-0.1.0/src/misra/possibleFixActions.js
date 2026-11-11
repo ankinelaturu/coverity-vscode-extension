@@ -67,16 +67,17 @@ async function computePossibleFixForFinding(session, findingId) {
 /**
  * @param {object} session
  * @param {string} findingId
+ * @returns {Promise<boolean>} true when an edit was applied
  */
 async function applyPossibleFix(session, findingId) {
   if (!session.hasReport()) {
     vscode.window.showWarningMessage('Coverity: load a report first.');
-    return;
+    return false;
   }
   const src = await resolveFindingSource(session, findingId);
   if (!src) {
     vscode.window.showWarningMessage('Coverity: could not resolve source for this finding.');
-    return;
+    return false;
   }
   const rule = extensionContext
     ? lookupMisraRule(extensionContext, src.finding.checkerId, src.finding.typeTitle)
@@ -93,7 +94,7 @@ async function applyPossibleFix(session, findingId) {
     vscode.window.showInformationMessage(
       'Coverity: no applyable offline rewrite for this finding. See Issue Details for guidance / reference pattern.'
     );
-    return;
+    return false;
   }
 
   const start = src.document.positionAt(fix.startOffset);
@@ -104,7 +105,7 @@ async function applyPossibleFix(session, findingId) {
     vscode.window.showWarningMessage(
       'Coverity: source changed since the suggestion was built. Refresh Issue Details and try again.'
     );
-    return;
+    return false;
   }
 
   const edit = new vscode.WorkspaceEdit();
@@ -112,9 +113,10 @@ async function applyPossibleFix(session, findingId) {
   const ok = await vscode.workspace.applyEdit(edit);
   if (ok) {
     vscode.window.showInformationMessage(`Coverity: applied possible fix (${fix.ruleKey}).`);
-  } else {
-    vscode.window.showWarningMessage('Coverity: failed to apply possible fix.');
+    return true;
   }
+  vscode.window.showWarningMessage('Coverity: failed to apply possible fix.');
+  return false;
 }
 
 /**
@@ -163,7 +165,15 @@ function registerPossibleFixSupport(context, session) {
         vscode.window.showWarningMessage('Coverity: no finding selected for possible fix.');
         return;
       }
-      await applyPossibleFix(session, fid);
+      const ok = await applyPossibleFix(session, fid);
+      // Lazy require avoids circular import with issueDetailsPanel.
+      try {
+        const { refreshIssueDetails } = require('../issueDetails/issueDetailsPanel');
+        await refreshIssueDetails(fid);
+      } catch {
+        // Panel may not be registered yet.
+      }
+      return ok;
     }
   );
 

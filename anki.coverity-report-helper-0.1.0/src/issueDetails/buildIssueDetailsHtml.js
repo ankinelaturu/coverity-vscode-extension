@@ -368,22 +368,23 @@ function renderPane(lines, side, titles = {}) {
 
 /**
  * @param {import('../misra/possibleFix').PossibleFixSuggestion} fix
+ * @param {{ findingId?: string }} [opts]
  */
-function renderPossibleFixSection(fix) {
+function renderPossibleFixSection(fix, opts = {}) {
   if (!fix) {
     return '';
   }
   const { left, right } = diffLines(fix.originalText, fix.proposedText);
   const conf = String(fix.confidence || 'low').toLowerCase();
   const refOnly = fix.referenceOnly === true;
+  const canApply = fix.applyable === true && !refOnly;
   const sectionLabel = refOnly ? 'Reference pattern' : 'Possible fix';
   const leftTitle = refOnly ? 'Example' : 'Current';
   const rightTitle = refOnly ? 'Fixed' : 'Proposed';
-  const applyHint = fix.applyable && !refOnly
-    ? 'Apply via Quick Fix (lightbulb) or command <code>Coverity: Apply Possible Fix</code>.'
-    : refOnly
-      ? 'Guidance only — this is the rulebook pattern, not an edit of your source. No Apply action.'
-      : 'Review only — not auto-applied.';
+  const applyBtn =
+    canApply && opts.findingId
+      ? `<button type="button" class="apply-btn" data-action="applyPossibleFix" data-finding-id="${escapeHtml(opts.findingId)}">Apply</button>`
+      : '';
   return `
       <div class="diff-section possible-fix${refOnly ? ' reference-only' : ''}">
         <div class="diff-box">
@@ -392,11 +393,11 @@ function renderPossibleFixSection(fix) {
               <span class="conf conf-${escapeHtml(conf)}" title="Offline heuristic confidence">${escapeHtml(conf)}</span>
               ${refOnly ? '<span class="conf conf-ref">pattern</span>' : ''}
             </span>
+            ${applyBtn}
           </div>
           <div class="fix-meta">
             <p class="fix-title"><strong>${escapeHtml(fix.title)}</strong></p>
             <p class="fix-rationale">${escapeHtml(fix.rationale)}</p>
-            <p class="fix-apply muted">${applyHint}</p>
           </div>
           <div class="diff">
             ${renderPane(left, 'left', { leftTitle, rightTitle })}
@@ -459,6 +460,7 @@ function renderIssueHeading(typeTitle, checkerId, rule) {
  * @param {string} opts.checkerId
  * @param {string} opts.typeTitle
  * @param {string} [opts.findingSummary]
+ * @param {string} [opts.findingId]
  * @param {import('../misra/misraRules').MisraRuleEntry | null} opts.rule
  * @param {import('../misra/possibleFix').PossibleFixSuggestion | null} [opts.possibleFix]
  */
@@ -468,11 +470,14 @@ function buildIssueDetailsHtml(opts) {
   const title = opts.typeTitle || checker;
   const rule = opts.rule;
   const headingHtml = renderIssueHeading(title, checker, rule);
+  const hasLocalFix =
+    !!opts.possibleFix &&
+    opts.possibleFix.applyable === true &&
+    !opts.possibleFix.referenceOnly;
   // Reference-only fallback duplicates the Example|Fixed book samples — skip it in the UI.
-  const possibleFixHtml =
-    opts.possibleFix && !opts.possibleFix.referenceOnly
-      ? renderPossibleFixSection(opts.possibleFix)
-      : '';
+  const possibleFixHtml = hasLocalFix
+    ? renderPossibleFixSection(opts.possibleFix, { findingId: opts.findingId })
+    : '';
 
   let body;
   if (!rule) {
@@ -485,6 +490,29 @@ function buildIssueDetailsHtml(opts) {
       ${possibleFixHtml}`;
   } else {
     const { left, right } = diffLines(rule.example, rule.fixed);
+    const refInner = `
+          <div class="diff">
+            ${renderPane(left, 'left')}
+            ${renderPane(right, 'right')}
+          </div>`;
+    // When a local Possible fix exists, keep the rulebook sample but collapse it.
+    const refSection = hasLocalFix
+      ? `<div class="diff-section">
+        <details class="ref-details">
+          <summary class="ref-summary">Reference example</summary>
+          <div class="diff-box ref-box">
+            ${refInner}
+          </div>
+        </details>
+      </div>`
+      : `<div class="diff-section">
+        <div class="diff-box">
+          <div class="diff-box-header">
+            <span class="diff-box-label">Reference example</span>
+          </div>
+          ${refInner}
+        </div>
+      </div>`;
     body = `
       <div class="meta">
         ${headingHtml}
@@ -493,24 +521,14 @@ function buildIssueDetailsHtml(opts) {
         ${rule.howToFix ? `<p class="how"><strong>How to fix:</strong> ${escapeHtml(rule.howToFix)}</p>` : ''}
       </div>
       ${possibleFixHtml}
-      <div class="diff-section">
-        <div class="diff-box">
-          <div class="diff-box-header">
-            <span class="diff-box-label">Reference example</span>
-          </div>
-          <div class="diff">
-            ${renderPane(left, 'left')}
-            ${renderPane(right, 'right')}
-          </div>
-        </div>
-      </div>`;
+      ${refSection}`;
   }
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}';" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style nonce="${nonce}">
   :root {
@@ -657,17 +675,63 @@ function buildIssueDetailsHtml(opts) {
     padding: 8px 12px 4px;
     border-bottom: 1px solid var(--vscode-widget-border, rgba(128,128,128,.25));
   }
-  .fix-title, .fix-rationale, .fix-apply {
+  .fix-title, .fix-rationale {
     margin: 0 0 6px;
     line-height: 1.4;
     font-size: 12px;
   }
-  .fix-apply code {
-    font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
-    font-size: 11px;
-  }
   .possible-fix {
     padding-top: 0;
+  }
+  .apply-btn {
+    appearance: none;
+    border: 1px solid var(--vscode-button-border, transparent);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
+  }
+  .apply-btn:hover {
+    background: var(--vscode-button-hoverBackground);
+  }
+  .apply-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .ref-details {
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, rgba(128,128,128,.4)));
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+  }
+  .ref-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    background: var(--vscode-sideBarSectionHeader-background, rgba(127,127,127,.08));
+    user-select: none;
+  }
+  .ref-summary::-webkit-details-marker { display: none; }
+  .ref-summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 6px;
+    opacity: 0.7;
+  }
+  details[open] > .ref-summary::before { content: '▾'; }
+  .ref-box {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
   }
   .diff {
     display: grid;
@@ -753,6 +817,21 @@ function buildIssueDetailsHtml(opts) {
   <div class="wrap">
     ${body}
   </div>
+  <script nonce="${nonce}">
+    (function () {
+      const vscode = acquireVsCodeApi();
+      document.addEventListener('click', function (ev) {
+        const btn = ev.target && ev.target.closest
+          ? ev.target.closest('[data-action="applyPossibleFix"]')
+          : null;
+        if (!btn) return;
+        const findingId = btn.getAttribute('data-finding-id');
+        if (!findingId) return;
+        btn.disabled = true;
+        vscode.postMessage({ type: 'applyPossibleFix', findingId: findingId });
+      });
+    })();
+  </script>
 </body>
 </html>`;
 }
