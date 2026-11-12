@@ -2,6 +2,7 @@
 
 const vscode = require('vscode');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
+const { mainEventIndex } = require('../model/stepDisplay');
 const { listFindingsOnLine } = require('../codelens/findingsAtLine');
 
 /**
@@ -30,7 +31,7 @@ function applyNavigationTarget(session, findingId, eventIndex) {
 }
 
 /**
- * Match Coverity diagnostic on this line → finding (last step only).
+ * Match Coverity diagnostic on this line → finding (main = last root step).
  * @param {object} session
  * @param {import('vscode').TextDocument} document
  * @param {number} line
@@ -49,16 +50,16 @@ function matchDiagnosticFinding(session, document, line) {
       continue;
     }
     for (const finding of session.indexes.findings) {
-      const lastEi = finding.events.length - 1;
-      if (lastEi < 0) {
+      const mainEi = mainEventIndex(finding);
+      if (mainEi < 0) {
         continue;
       }
-      const t = session.getTracked(finding.id, lastEi);
+      const t = session.getTracked(finding.id, mainEi);
       if (!t?.uri || t.uri.toString() !== document.uri.toString() || !t.range) {
         continue;
       }
       if (t.range.intersection(d.range) || t.range.contains(d.range.start)) {
-        return { findingId: finding.id, eventIndex: lastEi };
+        return { findingId: finding.id, eventIndex: mainEi };
       }
     }
   }

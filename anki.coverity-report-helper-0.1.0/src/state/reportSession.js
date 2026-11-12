@@ -10,6 +10,7 @@ const { transformRangeForChange } = require('../tracking/rangeTracker');
 const { saveLocationCache, loadLocationCache, clearLocationCache } = require('../persistence/locationCache');
 const { rebuildExplorerDecorationIndex } = require('../explorer/decorationIndex');
 const { describe } = require('../lookup/lookup');
+const { mainEventIndex } = require('../model/stepDisplay');
 const { listFindingsOnLine, resolveLineRuleContext: resolveLineRuleContextForSession } =
   require('../codelens/findingsAtLine');
 const { applyNavigationTarget, rememberLineFinding } = require('../navigation/editorNavigation');
@@ -484,7 +485,8 @@ class ReportSession {
   }
 
   /**
-   * One Problem per issue: range + message on the last event. Earlier events are
+   * One Problem per issue: range + message on the main event (last root step).
+   * Nested sub-steps and earlier roots are
    * relatedInformation in event order (0..n-1), not sorted by line number.
    */
   collectDiagnostics() {
@@ -503,14 +505,17 @@ class ReportSession {
       if (n === 0) {
         continue;
       }
-      const lastEi = n - 1;
-      const mainTracked = this.getTracked(finding.id, lastEi);
+      const mainEi = mainEventIndex(finding);
+      if (mainEi < 0) {
+        continue;
+      }
+      const mainTracked = this.getTracked(finding.id, mainEi);
       if (!mainTracked?.uri || !mainTracked.range) {
         continue;
       }
 
       const title = finding.typeTitle || finding.checkerId || 'Coverity issue';
-      const mainEv = finding.events[lastEi];
+      const mainEv = finding.events[mainEi];
       const hint = describe(finding.checkerId, mainEv.label);
       const core = `[${finding.checkerId || 'Unknown'}] ${mainEv.label}${hint ? ` — ${hint}` : ''}: ${mainEv.rawPayload || title}`.trim();
       const msg = `${core} — CodeLens/Hover: Full Trace`;

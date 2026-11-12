@@ -3,13 +3,14 @@
 const vscode = require('vscode');
 const { suggestPossibleFix } = require('./possibleFix');
 const { lookupMisraRule } = require('./misraRules');
+const { mainEventIndex } = require('../model/stepDisplay');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
 
 /** @type {import('vscode').ExtensionContext | null} */
 let extensionContext = null;
 
 /**
- * Resolve document + focus line for a finding's primary (last) event.
+ * Resolve document + focus line for a finding's primary (last root) event.
  * @param {object} session
  * @param {string} findingId
  * @returns {Promise<{ finding: object, document: import('vscode').TextDocument, focusLine: number, uri: import('vscode').Uri } | null>}
@@ -19,8 +20,11 @@ async function resolveFindingSource(session, findingId) {
   if (!finding || !finding.events?.length) {
     return null;
   }
-  const lastEi = finding.events.length - 1;
-  const tracked = session.getTracked(findingId, lastEi);
+  const mainEi = mainEventIndex(finding);
+  if (mainEi < 0) {
+    return null;
+  }
+  const tracked = session.getTracked(findingId, mainEi);
   if (!tracked?.uri) {
     return null;
   }

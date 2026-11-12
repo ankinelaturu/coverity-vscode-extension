@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { buildTracePeekHtml } = require('./buildTracePeekHtml');
 const { DIAGNOSTIC_SOURCE } = require('../state/reportSession');
+const { mainEventIndex } = require('../model/stepDisplay');
 const { applyNavigationTarget, rememberLineFinding } = require('../navigation/editorNavigation');
 
 /** @type {FullTraceViewProvider | null} */
@@ -332,18 +333,18 @@ function findingStepForDiagnostic(session, document, diag) {
     return null;
   }
 
-  /** Primary diagnostic range is the last trace step only. */
+  /** Primary diagnostic range is the main (last root) step. */
   for (const finding of session.indexes.findings) {
-    const lastEi = finding.events.length - 1;
-    if (lastEi < 0) {
+    const mainEi = mainEventIndex(finding);
+    if (mainEi < 0) {
       continue;
     }
-    const t = session.getTracked(finding.id, lastEi);
+    const t = session.getTracked(finding.id, mainEi);
     if (!t?.uri || t.uri.toString() !== document.uri.toString() || !t.range) {
       continue;
     }
     if (t.range.intersection(diag.range) || t.range.contains(diag.range.start)) {
-      return { findingId: finding.id, eventIndex: lastEi };
+      return { findingId: finding.id, eventIndex: mainEi };
     }
   }
   return null;

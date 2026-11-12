@@ -1,6 +1,34 @@
 'use strict';
 
 /**
+ * Index of the finding's primary event: last root-level step (depth 1),
+ * not the last nested leaf (e.g. prefer `4` over `4.3`).
+ * @param {{ events?: Array<{ stepDepth?: number }> } | null | undefined} finding
+ * @returns {number} 0-based index, or -1 if no events
+ */
+function mainEventIndex(finding) {
+  const events = finding?.events || [];
+  if (events.length === 0) {
+    return -1;
+  }
+  for (let i = events.length - 1; i >= 0; i--) {
+    const depth = events[i].stepDepth;
+    if (depth == null || depth <= 1) {
+      return i;
+    }
+  }
+  return events.length - 1;
+}
+
+/**
+ * @param {{ events?: Array<{ stepDepth?: number }> } | null | undefined} finding
+ * @param {number} eventIndex
+ */
+function isMainEvent(finding, eventIndex) {
+  return eventIndex === mainEventIndex(finding);
+}
+
+/**
  * @param {{ stepPath?: string, stepNumber?: number }} step
  * @param {number} oneBasedIndex fallback when report has no step prefix
  */
@@ -35,6 +63,8 @@ function stepMarkdownIndent(step) {
 }
 
 module.exports = {
+  mainEventIndex,
+  isMainEvent,
   formatStepLabel,
   stepIndentPx,
   stepMarkdownIndent,

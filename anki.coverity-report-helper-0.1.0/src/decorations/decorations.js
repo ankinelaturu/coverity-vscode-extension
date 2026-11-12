@@ -3,6 +3,7 @@
 const vscode = require('vscode');
 const { buildTraceMarginDecorations } = require('./traceMarginDecorations');
 const { estimateCodeLensRowsPerLine } = require('./codeLensLayout');
+const { mainEventIndex } = require('../model/stepDisplay');
 
 const CPP_LANGS = new Set(['c', 'cpp']);
 
@@ -88,13 +89,13 @@ class DecorationManager {
       if (checkerFilter && (finding.checkerId || 'Unknown') !== checkerFilter) {
         continue;
       }
-      const lastEi = finding.events.length - 1;
+      const mainEi = mainEventIndex(finding);
       for (let ei = 0; ei < finding.events.length; ei++) {
         const t = this.session.getTracked(finding.id, ei);
         if (!t?.uri || t.uri.toString() !== docKey || !t.range) {
           continue;
         }
-        if (markEnabled && ei !== lastEi) {
+        if (markEnabled && ei !== mainEi) {
           traceMarkRanges.push(t.range);
         }
         if (finding.id === this.session.activeFindingId) {

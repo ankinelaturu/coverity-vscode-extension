@@ -9,6 +9,7 @@ const {
 } = require('../misra/possibleFixActions');
 const { suggestPossibleFix } = require('../misra/possibleFix');
 const { describe } = require('../lookup/lookup');
+const { mainEventIndex } = require('../model/stepDisplay');
 const { listFindingsOnLine } = require('../codelens/findingsAtLine');
 const { matchDiagnosticFinding } = require('../navigation/editorNavigation');
 
@@ -228,7 +229,8 @@ class IssueDetailsViewProvider {
       const checkerId = finding.checkerId || '';
       const typeTitle = finding.typeTitle || checkerId;
       const rule = lookupMisraRule(this.context, checkerId, typeTitle);
-      const mainEv = finding.events[finding.events.length - 1];
+      const mainEi = mainEventIndex(finding);
+      const mainEv = mainEi >= 0 ? finding.events[mainEi] : null;
       const hint = describe(checkerId, mainEv?.label);
       const findingSummary = [hint, mainEv?.rawPayload].filter(Boolean).join(' — ');
       let possibleFix = null;
