@@ -2,7 +2,7 @@
   "name": "coverity-report-helper",
   "displayName": "Coverity Report Helper",
   "description": "Load cov-format-errors multiline reports; Explorer badges, Problems, editor navigation.",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "icon": "media/duck.svg",
   "publisher": "anki",
   "license": "MIT",
@@ -233,7 +233,7 @@
         "coverity.defaultReportPath": {
           "type": "string",
           "default": "deploy/coverity/coverity-report.txt",
-          "description": "Report path relative to each workspace folder root (not relative to the report file location)."
+          "description": "Report file to auto-load. Relative paths are resolved from each workspace folder root; absolute paths are used as-is. Takes priority over the last manually loaded report. Changing this setting reloads the report when auto-load is enabled."
         },
         "coverity.pathMappings": {
           "type": "array",

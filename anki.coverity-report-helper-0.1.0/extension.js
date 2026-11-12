@@ -127,11 +127,14 @@ function activate(context) {
         session.fireChange();
         decorations.update();
       }
+      if (e.affectsConfiguration('coverity.defaultReportPath') || e.affectsConfiguration('coverity.autoLoadReport')) {
+        void maybeAutoLoadReport(session, { reason: 'settings-changed' });
+      }
     })
   );
 
   outputChannel.appendLine('Coverity Report Helper activated.');
-  maybeAutoLoadReport(session);
+  void maybeAutoLoadReport(session, { reason: 'activate' });
   decorations.update();
 }
 
@@ -338,34 +341,108 @@ function showParseOutput(session) {
   }
 }
 
-async function maybeAutoLoadReport(session) {
+/**
+ * Resolve coverity.defaultReportPath against a workspace folder.
+ * Absolute paths are used as-is; relative paths join under the folder root.
+ * @param {string} configured
+ * @param {import('vscode').WorkspaceFolder} folder
+ */
+function resolveConfiguredReportUri(configured, folder) {
+  const raw = String(configured || '').trim();
+  if (!raw) {
+    return null;
+  }
+  if (path.isAbsolute(raw)) {
+    return vscode.Uri.file(raw);
+  }
+  return vscode.Uri.file(path.join(folder.uri.fsPath, raw));
+}
+
+/**
+ * @param {import('vscode').Uri} uri
+ */
+async function fileExists(uri) {
+  try {
+    await vscode.workspace.fs.stat(uri);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Auto-load priority:
+ * 1) coverity.defaultReportPath (settings) — if the file exists
+ * 2) last successfully loaded report path (workspaceState fallback)
+ *
+ * @param {object} session
+ * @param {{ reason?: string }} [opts]
+ */
+async function maybeAutoLoadReport(session, opts = {}) {
   const cfg = vscode.workspace.getConfiguration('coverity');
   if (!cfg.get('autoLoadReport', true)) {
     return;
   }
-  const rel = cfg.get('defaultReportPath', 'deploy/coverity/coverity-report.txt');
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders?.length) {
+  const configured = String(
+    cfg.get('defaultReportPath', 'deploy/coverity/coverity-report.txt') || ''
+  ).trim();
+  const folders = vscode.workspace.workspaceFolders || [];
+
+  /** @type {import('vscode').Uri | null} */
+  let chosen = null;
+  /** @type {string} */
+  let source = '';
+
+  if (configured) {
+    if (path.isAbsolute(configured)) {
+      const abs = vscode.Uri.file(configured);
+      if (await fileExists(abs)) {
+        chosen = abs;
+        source = 'defaultReportPath (absolute)';
+      }
+    } else {
+      for (const folder of folders) {
+        const candidate = resolveConfiguredReportUri(configured, folder);
+        if (candidate && (await fileExists(candidate))) {
+          chosen = candidate;
+          source = `defaultReportPath (${folder.name})`;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!chosen) {
+    const last = session.context.workspaceState.get('coverity.lastReportPath');
+    if (last) {
+      const lastUri = vscode.Uri.file(String(last));
+      if (await fileExists(lastUri)) {
+        chosen = lastUri;
+        source = 'lastReportPath';
+      }
+    }
+  }
+
+  if (!chosen) {
+    outputChannel?.appendLine(
+      `Coverity auto-load (${opts.reason || 'auto'}): no report found for defaultReportPath="${configured}".`
+    );
     return;
   }
-  for (const folder of folders) {
-    const candidate = vscode.Uri.file(path.join(folder.uri.fsPath, rel));
-    try {
-      await vscode.workspace.fs.stat(candidate);
-      await loadFromUri(session, candidate);
-      return;
-    } catch {
-      // not in this folder
-    }
+
+  // Skip reload if the same file is already loaded (unless settings forced a refresh).
+  if (
+    opts.reason !== 'settings-changed' &&
+    session.reportUri &&
+    session.reportUri.fsPath === chosen.fsPath
+  ) {
+    return;
   }
-  const last = session.context.workspaceState.get('coverity.lastReportPath');
-  if (last) {
-    try {
-      await loadFromUri(session, vscode.Uri.file(last));
-    } catch {
-      // ignore
-    }
-  }
+
+  outputChannel?.appendLine(
+    `Coverity auto-load (${opts.reason || 'auto'}): ${source} → ${chosen.fsPath}`
+  );
+  await loadFromUri(session, chosen);
 }
 
 async function configureMapping() {
